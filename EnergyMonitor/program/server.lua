@@ -135,18 +135,22 @@ local function listen()
     -- Receive data from all connected clients
     while true do
         local clock = os.clock()
-        local msg = _G.receiveMessage()
+        local msg = _G.receiveMessage({
+            type = _G.MessageType.Update,
+            sender = _G.Sender.Client,
+            recipient = _G.Sender.Server
+        })
         local client = {}
         setmetatable(client, {__index = clientInfo})
 
-        if msg.type == _G.MessageType.Update then
+        if msg.data ~= nil and msg.data.peripheralData ~= nil then
 
             -- extract data from message and setup clientInfo
-            local data = msg.messageData.data
+            local data = msg.data.peripheralData
             client.id = data.id
             client.name = data.name
             client.data = data
-            client.type = msg.messageData.peripheral
+            client.type = msg.data.peripheral
             client.lastPing = clock
 
             -- set client as connected if not already done
@@ -157,10 +161,10 @@ local function listen()
                 term.clear()
                 term.setCursorPos(1,1)
                 print(clock)
-                print("Type: " .. _G.parsePeripheralType(msg.messageData.peripheral)) 
+                print("Type: " .. _G.parsePeripheralType(msg.data.peripheral))
             end
             
-            if msg.messageData.peripheral == _G.MessageDataPeripheral.Transfer then
+            if msg.data.peripheral == _G.MessageDataPeripheral.Transfer then
 
                 -- data received is from a transferrer, print its values on debug
                 debugOutput("Client: "..data.name)
@@ -169,7 +173,7 @@ local function listen()
                 debugOutput("Transfer In: "..data.transferOut)
                 --debugOutput("Mode: "..data.mode)
                 debugOutput("Status: "..data.status)
-            elseif msg.messageData.peripheral == _G.MessageDataPeripheral.Capacitor then
+            elseif msg.data.peripheral == _G.MessageDataPeripheral.Capacitor then
 
                 -- data received is from a capacitor, print its values on debug
                 debugOutput("Client: "..data.name)
@@ -197,12 +201,6 @@ end
 -- send merged data structure to all monitors
 local function sendMonitorData()
     while true do
-        -- prepare data for sending to monitor
-        local data = {}
-        setmetatable(data, {__index = _G.MessageData})
-        -- assign invalid peripheral, since we dont use it
-        data.peripheral = -1
-
         -- create new monitor data datastructure to save all neccessary information
         local monitorData = {}
         setmetatable(monitorData, {__index = _G.MonitorData})
@@ -218,11 +216,8 @@ local function sendMonitorData()
         monitorData.inputRate = totalInputRate()
         monitorData.outputRate = totalOutputRate()
 
-        -- assign the data to the monitor update packet
-        data.data = monitorData
-
         -- send data to all monitors
-        local msg = _G.NewUpdateToMonitor(data)
+        local msg = _G.NewUpdateToMonitor(monitorData)
         _G.sendMessage(msg)
 
         -- needed since otherwise no yield detected in parallel.waitForAll

@@ -218,14 +218,196 @@ function getVersion()
   local list = fileData.readAll()
   fileData.close()
 
-  return list
+  return string.gsub(string.gsub(list, "^%s+", ""), "%s+$", "")
+end
+
+function waitForEnter()
+  write(selectedLang:getText("pressEnter"))
+  read()
+end
+
+function promptChoice(title, choices)
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    print(title)
+    print()
+
+    for i = 1, #choices do
+      print(choices[i].key..") "..choices[i].label)
+    end
+
+    print()
+    term.write("Input: ")
+    local input = string.lower(read() or "")
+
+    for i = 1, #choices do
+      if input == string.lower(choices[i].key) then
+        return choices[i].value
+      end
+    end
+
+    print()
+    print(selectedLang:getText("invalidInput"))
+    sleep(1)
+  end
+end
+
+function promptNumber(title, defaultValue, minValue, maxValue)
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    print(title)
+    print()
+    term.write("Input ["..defaultValue.."]: ")
+
+    local input = read()
+    if input == nil or input == "" then
+      return defaultValue
+    end
+
+    local number = tonumber(input)
+    if number ~= nil and number >= minValue and number <= maxValue and math.floor(number) == number then
+      return number
+    end
+
+    print()
+    print(selectedLang:getText("invalidInput").." ("..minValue.."-"..maxValue..")")
+    sleep(1)
+  end
+end
+
+function promptYesNo(title, details)
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    print(title)
+    if details ~= nil and details ~= "" then
+      print(details)
+    end
+    print()
+    term.write("(y/n): ")
+
+    local input = read()
+    if selectedLang:yesCheck(input) then
+      return true
+    elseif selectedLang:noCheck(input) then
+      return false
+    end
+
+    print()
+    print(selectedLang:getText("invalidInput"))
+    sleep(1)
+  end
+end
+
+function promptYesNoInline(prompt)
+  while true do
+    term.write(prompt.." (y/n): ")
+    local input = read()
+    if selectedLang:yesCheck(input) then
+      return true
+    elseif selectedLang:noCheck(input) then
+      return false
+    end
+
+    print(selectedLang:getText("invalidInput"))
+  end
+end
+
+function configureInstall()
+  while true do
+    local config = {
+      program = "",
+      peripheralType = "n/a",
+      transferType = "n/a",
+      modemChannel = 5
+    }
+
+    config.program = promptChoice("Select this computer's role", {
+      { key = "s", label = "Server - collects client data and sends monitor updates", value = "server" },
+      { key = "m", label = "Monitor - displays data from the server", value = "monitor" },
+      { key = "c", label = "Client - reads one local energy peripheral", value = "client" }
+    })
+
+    if config.program == "client" then
+      config.peripheralType = promptChoice("What is this client connected to?", {
+        { key = "s", label = "Energy storage / capacitor", value = "capacitor" },
+        { key = "t", label = "Energy transfer / meter", value = "transfer" }
+      })
+
+      if config.peripheralType == "transfer" then
+        config.transferType = promptChoice("What transfer direction should this client report?", {
+          { key = "0", label = "Input", value = "input" },
+          { key = "1", label = "Output", value = "output" },
+          { key = "2", label = "Both", value = "both" }
+        })
+      end
+    end
+
+    config.modemChannel = promptNumber("Set the modem channel/port used by this EnergyMonitor network", 5, 0, 65535)
+
+    term.clear()
+    term.setCursorPos(1,1)
+    print("Configuration summary")
+    print()
+    print("Role: "..config.program)
+    print("Peripheral type: "..config.peripheralType)
+    print("Transfer type: "..config.transferType)
+    print("Modem channel/port: "..config.modemChannel)
+    print()
+
+    if promptYesNoInline("Use these settings?") then
+      return config
+    end
+  end
+end
+
+function configureLabel()
+  if promptYesNo(selectedLang:getText("installerLabelLineOne"), selectedLang:getText("installerLabelInfo")) then
+    term.clear()
+    term.setCursorPos(1,1)
+    term.write("Label: ")
+    local lbl = read()
+
+    if lbl ~= nil and lbl ~= "" then
+      if os.setComputerLabel ~= nil then
+        os.setComputerLabel(lbl)
+      else
+        shell.run("label", "set", lbl)
+      end
+      print()
+      print(selectedLang:getText("installerLabelSet"))
+    else
+      print()
+      print(selectedLang:getText("installerLabelNotSet"))
+    end
+  else
+    print()
+    print(selectedLang:getText("installerLabelNotSet"))
+  end
+
+  sleep(1)
+end
+
+function configureStartup()
+  if promptYesNo(selectedLang:getText("installerStartupLineOne"), selectedLang:getText("installerStartupLineTwo")) then
+    local file = fs.open("startup","w")
+    file.writeLine("shell.run(\"/EnergyMonitor/start/start.lua\")")
+    file.close()
+    print()
+    print(selectedLang:getText("installerStartupInstalled"))
+  else
+    print()
+    print(selectedLang:getText("installerStartupUninstalled"))
+  end
+
+  sleep(1)
 end
 
 --===== Run installation =====
 
-local peripheralType = ""
-local transferType = ""
-local programType = ""
+local installConfig = {}
 
 --load language data
 getLanguage()
@@ -246,110 +428,11 @@ if not update then
   print(selectedLang:getText("installerIntroLineEight"))
   print(selectedLang:getText("installerIntroLineNine"))
   print()
-  write(selectedLang:getText("pressEnter"))
-  leer = read()
+  waitForEnter()
 
-
-  term.clear()
-  term.setCursorPos(1,1)
-  print(selectedLang:getText("installerServerOrClient"))
-  term.write("Input: ")
-    programType = read()
-    if programType == "s" then
-      programType = "server"
-    elseif programType == "m" then
-      programType = "monitor"
-    elseif programType == "c" then
-      programType = "client"
-
-      term.clear()
-      term.setCursorPos(1,1)
-      print(selectedLang:getText("installerClientTransferrerOrStorage"))
-      local clientType = read()
-      term.write("Input: ")
-      if clientType == "t" then
-        peripheralType = "transfer"
-        term.clear()
-        term.setCursorPos(1,1)
-        print(selectedLang:getText("installerClientTransferrerType"))
-        transferTypeNumber = tonumber(read())
-        if transferTypeNumber == 0 then
-          transferType = "input"
-        elseif transferTypeNumber == 1 then
-          transferType = "output"
-        else
-          transferType = "both"
-        end
-
-      elseif clientType == "s" then
-        peripheralType = "capacitor"
-      else
-        error(selectedLang:getText("installerInvalidInput"))
-      end
-
-    else
-      error(selectedLang:getText("installerInvalidInput"))
-    end
-
-
-
-  --Computer label
-  local out = true
-  while out do
-    term.clear()
-    term.setCursorPos(1,1)
-    print(selectedLang:getText("installerLabelLineOne"))
-    print(selectedLang:getText("installerLabelInfo"))
-    term.write(selectedLang:getText("installerLabelLineTwo"))
-
-    local input = read()
-    if selectedLang:yesCheck(input) then
-      print()
-      term.write("Input: ")
-
-      local lbl = read()
-      shell.run("label set " .. lbl)
-      print()
-      print(selectedLang:getText("installerLabelSet"))
-      print()
-      sleep(2)
-      out = false
-
-    elseif selectedLang:noCheck(input) then
-      print()
-      print(selectedLang:getText("installerLabelNotSet"))
-      print()
-      out = false
-    end
-  end
-
-  --Startup
-  local out2 = true
-  while out2 do
-    term.clear()
-    term.setCursorPos(1,1)
-    print(selectedLang:getText("installerStartupLineOne"))
-    print(selectedLang:getText("installerStartupLineTwo"))
-    term.write(selectedLang:getText("installerStartupLineThree"))
-
-    local input = read()
-    if selectedLang:yesCheck(input) then
-      local file = fs.open("startup","w")
-      file.writeLine("shell.run(\"/EnergyMonitor/start/start.lua\")")
-      file.close()
-      print()
-      print(selectedLang:getText("installerStartupInstalled"))
-      print()
-      out2 = false
-    end
-    if selectedLang:noCheck(input) then
-      print()
-      print(selectedLang:getText("installerStartupUninstalled"))
-      print()
-      out2 = false
-    end
-  end
-
+  installConfig = configureInstall()
+  configureLabel()
+  configureStartup()
   sleep(1)
 end --update
 
@@ -398,19 +481,13 @@ updateOptionFileWithLanguage()
 
 --settings
 if not update then
-  updateOptionFile("program", programType)
-  updateOptionFile("transferType", transferType)
-  updateOptionFile("peripheralType", peripheralType)
+  updateOptionFile("program", installConfig.program)
+  updateOptionFile("transferType", installConfig.transferType)
+  updateOptionFile("peripheralType", installConfig.peripheralType)
+  updateOptionFile("modemChannel", installConfig.modemChannel)
 end
 
---Get Remote version file
-downloadFile(relUrl,branch..".ver")
-
---Compare local and remote version
-local file = fs.open(branch..".ver","r")
-local remoteVer = file.readLine()
-file.close()
-updateOptionFile("version", remoteVer)
+updateOptionFile("version", getVersion())
 
 -- update options file with program to run and meter/storage
 
@@ -430,7 +507,7 @@ if not update then
   print(selectedLang:getText("installerOutroLineFour"))
   print()
   print("TrickShotMLG")
-  print("(c) 2024")
+  print("(c) 2026")
 
   local x,y = term.getSize()
   term.setTextColor(colors.yellow)

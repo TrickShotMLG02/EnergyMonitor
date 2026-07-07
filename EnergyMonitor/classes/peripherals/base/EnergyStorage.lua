@@ -11,16 +11,24 @@ local EnergyStorage = {
     
     -- overwrite these functions in specific mod support implementations with the corresponding api function
     energy = function(self)
-        return _G.defaultNil(self.id.getEnergyStored(), 0)
+        return _G.callPeripheralMethod(self.id, "getEnergyStored", 0)
     end,
     capacity = function(self)
-        return _G.defaultNil(self.id.getMaxEnergyStored(), 0)
+        return _G.callPeripheralMethod(self.id, "getMaxEnergyStored", 0)
     end,
     percentage = function(self)
-        return defaultNan(math.floor(self:energy()/self:capacity()*100), 0)
+        local capacity = self:capacity()
+        if capacity <= 0 then
+            return 0
+        end
+        return _G.defaultNan(math.floor(self:energy() / capacity * 100), 0)
     end,
     percentagePrecise = function(self)
-        return defaultNan(self:energy()/self:capacity()*100, 0)
+        local capacity = self:capacity()
+        if capacity <= 0 then
+            return 0
+        end
+        return _G.defaultNan(self:energy() / capacity * 100, 0)
     end
 }
 

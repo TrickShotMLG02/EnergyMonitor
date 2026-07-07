@@ -2,16 +2,16 @@
 local DraconicCoreEnergyTransfer = setmetatable({
     -- Basic Methods
     transferRateInput = function(self)
-        if transferType == "input" or transferType == "both" then
-            return defaultNil(self.id.getInputPerTick(), 0)
+        if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getInputPerTick", 0)
         else
             return 0
         end
     end,
 
     transferRateOutput = function(self)
-        if transferType == "output" or transferType == "both" then
-            return defaultNil(self.id.getOutputPerTick(), 0)
+        if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getOutputPerTick", 0)
         else
             return 0
         end

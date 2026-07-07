@@ -49,16 +49,16 @@ local EnergyMeter = setmetatable({
     --]]
 
     transferRateInput = function(self)
-        if transferType == _G.TransferType.Input then
-            return defaultNil(self.id.getTransferRate(), 0) -- Assuming this method exists
+        if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getTransferRate", 0)
         else
             return 0
         end
     end,
 
     transferRateOutput = function(self)
-        if transferType == _G.TransferType.Output then
-            return defaultNil(self.id.getTransferRate(), 0) -- Assuming this method exists
+        if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getTransferRate", 0)
         else
             return 0
         end

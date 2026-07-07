@@ -34,6 +34,7 @@ local sortingDir = "asc"
 -- debugging
 local debugPrint = true
 local debugUI = false
+local lastServerWarning = 0
 
 -- table contrains energyMeters[i].id as key and the value is the displayData{clientInfo = energyMeters[i], display = already created frame}
 local displayCells = {}
@@ -88,6 +89,7 @@ local displayedCells = {}
 -- create main window
 local main = basalt.addMonitor()
 main:setMonitor(_G.controlMonitor)
+local monitorRoot = main
 
 -- default content pane
 local flex = main:addFlexbox():setWrap("wrap"):setBackground(colors.red):setPosition(1, 1):setSize("parent.w", "parent.h"):setDirection("column"):setSpacing(0)
@@ -111,6 +113,11 @@ local prevBtn = {}
 local nextBtn = {}
 local versionFooter = flex:addFrame():setBackground(versionFooterColor):setSize("parent.w", 1)
 local timeLbl = {}
+local noticeFrame = {}
+local noticeTitle = {}
+local noticeLineOne = {}
+local noticeLineTwo = {}
+local noticeLineThree = {}
 
 -- amount of cells per page
 local flexWidth, flexHeight = main:getSize()
@@ -150,6 +157,9 @@ local updateDisplayCells
 local countDisplayableCells
 local updatePageCount
 local updateMonitorValues
+local updateRuntimeFooter
+local showServerNotice
+local hideServerNotice
 local animateButtonClick
 local animateButtonToggle
 local animateButtonToggleGroup
@@ -175,15 +185,22 @@ local toggleFilterShowSpecificTypeText
 listen = function()
     -- Receive data from server
     while true do
-        local msg = _G.receiveMessage()
+        local msg = _G.receiveMessage({
+            type = _G.MessageType.Monitor,
+            sender = _G.Sender.Server,
+            recipient = _G.Sender.Monitor
+        }, 10)
 
-        if msg.type == _G.MessageType.Monitor and msg.sender == _G.Sender.Server then
+        if msg == nil then
+            local now = os.clock()
+            if now - lastServerWarning >= 10 then
+                lastServerWarning = now
+                showServerNotice()
+            end
+        elseif msg.type == _G.MessageType.Monitor and msg.sender == _G.Sender.Server then
+            hideServerNotice()
             
             local clock = os.clock()
-            
-            -- print time running to footer of monitor
-            timeLbl:setText("Time running: " .. convertTicksToTime(clock * 20))
-            
             if debugPrint then
                 term.redirect(term.native())
                 term.clear()
@@ -193,7 +210,7 @@ listen = function()
             end
 
             -- extract data from message
-            local data = msg.messageData.data
+            local data = msg.data
 
             capacitors = data.capacitors
             capacitorsCount = data.capacitorsCount
@@ -270,10 +287,35 @@ setupMonitor = function()
         animateButtonClick(self)
       end), nextPage)
 	versionFooter:addLabel():setText("version: " .. _G.version):setFontSize(1):setSize("parent.w/2", 1):setPosition("parent.w/2", versionFooterHeight):setTextAlign("right"):setForeground(colors.gray)
-	timeLbl = versionFooter:addLabel():setText("Time running: "):setFontSize(1):setSize("parent.w/2", 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+	timeLbl = versionFooter:addLabel():setText("Time running: 0s"):setFontSize(1):setSize("parent.w/2", 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+
+    noticeFrame = monitorRoot:addFrame()
+        :setBackground(colors.gray)
+        :setForeground(colors.white)
+        :setSize(36, 8)
+        :setPosition("(parent.w / 2) - 18", "(parent.h / 2) - 4")
+        :setZIndex(50)
+        :hide()
+    noticeTitle = noticeFrame:addLabel():setText("Server not reachable"):setSize("parent.w", 1):setPosition(1, 2):setTextAlign("center"):setForeground(colors.white)
+    noticeLineOne = noticeFrame:addLabel():setText("No update received."):setSize("parent.w", 1):setPosition(1, 4):setTextAlign("center"):setForeground(colors.white)
+    noticeLineTwo = noticeFrame:addLabel():setText("Channel: " .. tostring(_G.modemChannel)):setSize("parent.w", 1):setPosition(1, 5):setTextAlign("center"):setForeground(colors.white)
+    noticeLineThree = noticeFrame:addLabel():setText("Check server/modems."):setSize("parent.w", 1):setPosition(1, 6):setTextAlign("center"):setForeground(colors.white)
 
     -- auto update the monitor
     basalt.autoUpdate()
+end
+
+showServerNotice = function()
+    if noticeFrame ~= nil and noticeFrame.show ~= nil then
+        noticeLineTwo:setText("Channel: " .. tostring(_G.modemChannel))
+        noticeFrame:show()
+    end
+end
+
+hideServerNotice = function()
+    if noticeFrame ~= nil and noticeFrame.hide ~= nil then
+        noticeFrame:hide()
+    end
 end
 
 -- add a new display cell for a given peripheral id
@@ -308,7 +350,7 @@ end
 
 -- function to update the stored energy on UI
 updateEnergyDisplay = function()
-    energyLbl:setText("Energy: " .. _G.numberToEnergyUnit(storedEnergy) .. "/" .. _G.numberToEnergyUnit(maxEnergy) .. " (" .. _G.formatDecimals(energyPercentage, 1) .. "%)")
+    energyLbl:setText("Energy: " .. _G.numberToEnergyUnit(storedEnergy) .. "/" .. _G.numberToEnergyUnit(maxEnergy) .. " (" .. _G.formatDecimals(energyPercentage, 2) .. "%)")
     energyBar:setProgress(tonumber(_G.defaultInf(_G.defaultNil(_G.formatDecimals(energyPercentage, 0), 0), 0)))
 end
 
@@ -424,6 +466,15 @@ updateMonitorValues = function()
         end
 
         os.sleep(0.1)
+    end
+end
+
+updateRuntimeFooter = function()
+    while true do
+        if timeLbl ~= nil and timeLbl.setText ~= nil then
+            timeLbl:setText("Time running: " .. _G.convertTicksToTime(os.clock() * 20))
+        end
+        os.sleep(1)
     end
 end
 
@@ -693,7 +744,7 @@ end
 print("THIS IS THE MONITOR PROGRAM!")
 
 -- Run the pinger and the listener and monitor updaters in parallel
-parallel.waitForAll(setupMonitor, listen, updateMonitorValues)
+parallel.waitForAll(setupMonitor, listen, updateMonitorValues, updateRuntimeFooter)
 
 --------------------------------------
 -- ACTUAL MONITOR PROGRAM ENDS HERE --

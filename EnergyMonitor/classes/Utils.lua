@@ -35,6 +35,10 @@ function _G.convertTicksToTime(ticks)
     finalOutput = finalOutput .. seconds % 60 .. "s"
   end
 
+  if finalOutput == "" then
+    return "0s"
+  end
+
   return finalOutput
 end
 
@@ -154,4 +158,38 @@ end
 -- auxilary function to set return default value if input is Nan
 function _G.defaultNan ( val , def )
   return ternary(val ~= val, def, val)
+end
+
+function _G.callPeripheralMethod(peripheralObject, methodName, defaultValue, ...)
+  if peripheralObject == nil or methodName == nil then
+    if _G.debugOutput ~= nil then
+      _G.debugOutput("Peripheral method unavailable: " .. tostring(methodName))
+    end
+    return defaultValue
+  end
+
+  local methodLookupSuccess, method = pcall(function()
+    return peripheralObject[methodName]
+  end)
+
+  if not methodLookupSuccess or type(method) ~= "function" then
+    if _G.debugOutput ~= nil then
+      _G.debugOutput("Peripheral method unavailable: " .. tostring(methodName))
+    end
+    return defaultValue
+  end
+
+  local args = {...}
+  local success, result = pcall(function()
+    return method(unpack(args))
+  end)
+
+  if not success then
+    if _G.debugOutput ~= nil then
+      _G.debugOutput("Peripheral method failed: " .. tostring(methodName) .. " - " .. tostring(result))
+    end
+    return defaultValue
+  end
+
+  return _G.defaultNil(result, defaultValue)
 end

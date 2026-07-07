@@ -8,16 +8,16 @@ local EnergyTransfer = {
 
     -- overwrite these functions in specific mod support implementations with the corresponding api function
     transferRateInput = function(self)
-        if transferType == _G.TransferType.Input or transferType == _G.TransferType.Both then
-            return defaultNil(self.id.getTransferRateInput(), 0) -- Assuming this method exists
+        if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getTransferRateInput", 0)
         else
             return 0
         end
     end,
 
     transferRateOutput = function(self)
-        if transferType == _G.TransferType.Output or transferType == _G.TransferType.Both then
-            return defaultNil(self.id.getTransferRateOutput(), 0) -- Assuming this method exists
+        if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getTransferRateOutput", 0)
         else
             return 0
         end
