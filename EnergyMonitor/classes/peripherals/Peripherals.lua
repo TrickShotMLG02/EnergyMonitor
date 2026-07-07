@@ -18,6 +18,189 @@ _G.amountMonitors = 0
 _G.smallMonitor = 1
 _G.amountClients = 0
 
+local storageSupport = {}
+local transferSupport = {}
+
+local function hasMethod(peri, methodName)
+    if peri == nil then
+        return false
+    end
+
+    local success, method = pcall(function()
+        return peri[methodName]
+    end)
+
+    return success and type(method) == "function"
+end
+
+local function peripheralTypeContains(periType, pattern)
+    return periType ~= nil and string.find(periType, pattern) ~= nil
+end
+
+local function isMekanismEnergyType(periType)
+    return periType == "inductionMatrix"
+        or periType == "mekanismMachine"
+        or periType == "Induction Matrix"
+        or periType == "mekanism:induction_port"
+        or periType == "inductionPort"
+        or peripheralTypeContains(periType, "rftoolspower:cell")
+        or peripheralTypeContains(periType, "Energy Cube")
+        or peripheralTypeContains(periType, "EnergyCube")
+end
+
+local function newPeripheralContext(name, periType, peri)
+    return {
+        name = name,
+        type = periType,
+        peripheral = peri,
+        transferType = _G.transferType
+    }
+end
+
+local function registerSupport(definitions, definition)
+    if definition.fallback then
+        table.insert(definitions, definition)
+        return
+    end
+
+    for i = 1, #definitions do
+        if definitions[i].fallback then
+            table.insert(definitions, i, definition)
+            return
+        end
+    end
+
+    table.insert(definitions, definition)
+end
+
+function _G.registerEnergyStorageSupport(definition)
+    registerSupport(storageSupport, definition)
+end
+
+function _G.registerEnergyTransferSupport(definition)
+    registerSupport(transferSupport, definition)
+end
+
+local function tryCreateSupportedPeripheral(definitions, ctx)
+    for i = 1, #definitions do
+        local definition = definitions[i]
+        if definition.matches(ctx) then
+            print(definition.label .. " - " .. ctx.name)
+            return definition.create(ctx)
+        end
+    end
+
+    return nil
+end
+
+_G.registerEnergyStorageSupport({
+    label = "Mekanism Energy Storage device",
+    matches = function(ctx)
+        return isMekanismEnergyType(ctx.type)
+    end,
+    create = function(ctx)
+        return newMekanismEnergyStorage("ec0", ctx.peripheral, ctx.name, ctx.type)
+    end
+})
+
+_G.registerEnergyStorageSupport({
+    label = "DraconicEvolution Energy Storage device",
+    matches = function(ctx)
+        return ctx.type == "draconic_rf_storage"
+    end,
+    create = function(ctx)
+        return newDraconicEnergyStorage("ec0", ctx.peripheral, ctx.name, ctx.type)
+    end
+})
+
+_G.registerEnergyStorageSupport({
+    label = "getEnergyStored() device",
+    fallback = true,
+    matches = function(ctx)
+        return hasMethod(ctx.peripheral, "getEnergyStored")
+    end,
+    create = function(ctx)
+        return newEnergyStorage("ec0", ctx.peripheral, ctx.name, ctx.type)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "Energy Meter",
+    matches = function(ctx)
+        return ctx.type == "energymeter"
+    end,
+    create = function(ctx)
+        return newEnergyMeter("em0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "Mekanism Energy Transfer device",
+    matches = function(ctx)
+        return isMekanismEnergyType(ctx.type)
+    end,
+    create = function(ctx)
+        return newMekanismEnergyTransfer("ec0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "DraconicEvolution EnergyCore Transfer device",
+    matches = function(ctx)
+        return ctx.type == "draconic_rf_storage"
+    end,
+    create = function(ctx)
+        return newDraconicCoreEnergyTransfer("ec0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "DraconicEvolution Flux Gate Transfer device",
+    matches = function(ctx)
+        return ctx.type == "flow_gate"
+    end,
+    create = function(ctx)
+        return newDraconicFluxGateEnergyTransfer("ec0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "getEnergyTransferInput() device",
+    fallback = true,
+    matches = function(ctx)
+        return hasMethod(ctx.peripheral, "getEnergyTransferInput")
+            or hasMethod(ctx.peripheral, "getTransferRateInput")
+            or hasMethod(ctx.peripheral, "getTransferRateOutput")
+    end,
+    create = function(ctx)
+        return newEnergyTransfer("ec0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+local function setupSystemPeripheral(periItem, periType, peri)
+    if periType == "monitor" then
+        print("Monitor - " .. periItem)
+        if _G.controlMonitor == "" then
+            _G.controlMonitor = peri
+        else
+            _G.monitors[_G.amountMonitors] = peri
+            _G.amountMonitors = _G.amountMonitors + 1
+        end
+    elseif periType == "modem" and _G.callPeripheralMethod(peri, "isWireless", false) then
+        print("Wireless Modem - " .. periItem)
+        _G.wirelessModem = peri
+        _G.enableWireless = true
+    end
+end
+
+local function setupClientPeripheral(ctx)
+    if _G.peripheralType == "capacitor" and _G.capacitor == nil then
+        _G.capacitor = tryCreateSupportedPeripheral(storageSupport, ctx)
+    elseif _G.peripheralType == "transfer" and _G.transferrer == nil then
+        _G.transferrer = tryCreateSupportedPeripheral(transferSupport, ctx)
+    end
+end
+
 -- function that grabs all peripherals and initializes the correct one as client
 local function searchPeripherals()
     local peripheralList = peripheral.getNames()
@@ -25,120 +208,10 @@ local function searchPeripherals()
         local periItem = peripheralList[i]
         local periType = peripheral.getType(periItem)
         local peri = peripheral.wrap(periItem)
-        
-        
-        if periType == "monitor" then
-            print("Monitor - "..periItem)
-            if(peripheralList[i] == controlMonitor) then
-                --add to output monitors
-                _G.monitors[amountMonitors] = peri
-                _G.amountMonitors = amountMonitors + 1
-            else
-                _G.controlMonitor = peri
-            end
-        elseif periType == "modem" then
-            if peri.isWireless() then
-                print("Wireless Modem - "..periItem)
-                _G.wirelessModem = peri
-                _G.enableWireless = true
-            end
-        end
+        local ctx = newPeripheralContext(periItem, periType, peri)
 
-
-        if _G.peripheralType == "capacitor" then
-            local successGetEnergyStored, errGetEnergyStored = pcall(function() peri.getEnergyStored() end)
-
-            -- mekanism support
-            local isMekanism = periType == "inductionMatrix" 
-                or periType == "mekanismMachine" 
-                or periType == "Induction Matrix" 
-                or periType == "mekanism:induction_port" 
-                or periType == "inductionPort"
-                or string.find(periType, "rftoolspower:cell")
-                or string.find(periType, "Energy Cube")
-                or string.find(periType, "EnergyCube")
-			
-            -- draconic evolution support
-			local isDraconicEvolution = periType == "draconic_rf_storage"
-
-            -- fallback to base
-            local isBase = (not isMekanism and not isThermalExpansion and not isDraconicEvolution) and successGetEnergyStored
-
-            if isBase then
-                --Capacitorbank / Energycell / Energy Core
-                print("getEnergyStored() device - "..peripheralList[i])
-                _G.capacitor = newEnergyStorage("ec0", peri, periItem, periType)
-            end
-
-            if isMekanism then
-                --Mekanism V10plus 
-                print("Mekanism Energy Storage device - "..peripheralList[i])
-                _G.capacitor = newMekanismEnergyStorage("ec0", peri, periItem, periType)
-            end
-			
-			if isDraconicEvolution then
-                --Draconic energy core
-                print("DraconicEvolution Energy Storage device - "..peripheralList[i])
-                _G.capacitor = newDraconicEnergyStorage("ec0", peri, periItem, periType)
-            end
-        end
-
-
-        if _G.peripheralType == "transfer" then
-            local successGetEnergyTransferInput, errGetEnergyTransferInput = pcall(function() peri.getEnergyTransferInput() end)
-
-            -- mekanism support
-            local isMekanism = periType == "inductionMatrix" 
-                or periType == "mekanismMachine" 
-                or periType == "Induction Matrix" 
-                or periType == "mekanism:induction_port" 
-                or periType == "inductionPort"
-                or string.find(periType, "rftoolspower:cell")
-                or string.find(periType, "Energy Cube")
-                or string.find(periType, "EnergyCube")
-			
-            -- energymeter support
-            local isEnergyMeter = periType == "energymeter"
-
-            -- draconic evolution support
-			local isDraconicEvolutionEnergyCore = periType == "draconic_rf_storage"
-            local isDraconicEvolutionFluxGate = periType == "flow_gate"
-            local isDraconicEvolution = not isDraconicEvolutionEnergyCore and not isDraconicEvolutionFluxGate
-
-            -- fallback to base
-            local isBase = (not isMekanism and not isThermalExpansion and not isDraconicEvolution) and successGetEnergyTransfer
-
-            if isBase then
-                --Capacitorbank / Energycell / Energy Core
-                print("getEnergyTransferInput() device - "..peripheralList[i])
-                _G.transferrer = newEnergyTransfer("ec0", peri, periItem, periType, _G.transferType)
-            end
-
-            if isMekanism then
-                --Mekanism V10plus 
-                print("Mekanism Energy Transfer device - "..peripheralList[i])
-                _G.transferrer = newMekanismEnergyTransfer("ec0", peri, periItem, periType, _G.transferType)
-            end
-
-            if isEnergyMeter then
-                --Energymeter
-                print("Energy Meter - "..periItem)
-                _G.transferrer = newEnergyMeter("em0", peri, periItem, periType, _G.transferType)
-            end
-			
-			if isDraconicEvolutionEnergyCore then
-                --Draconic energy core
-                print("DraconicEvolution EnergyCore Transfer device - "..peripheralList[i])
-                _G.transferrer = newDraconicCoreEnergyTransfer("ec0", peri, periItem, periType, _G.transferType)
-            end
-
-            if isDraconicEvolutionFluxGate then
-                --Draconic flux gate
-                print("DraconicEvolution Flux Gate Transfer device - "..peripheralList[i])
-                _G.transferrer = newDraconicFluxGateEnergyTransfer("ec0", peri, periItem, periType, _G.transferType)
-            end
-        end
-            
+        setupSystemPeripheral(periItem, periType, peri)
+        setupClientPeripheral(ctx)
     end
 end
 
@@ -181,9 +254,19 @@ end
 -- function that creates the connection from the modem on the channel from the config
 function setupModemConnection()
     debugOutput("Setup Modem Connection on channel " .. _G.modemChannel)
-    if _G.enableWireless then
-        _G.wirelessModem.open(_G.modemChannel)
+    if not _G.enableWireless then
+        local message = _G.language:getText("noModemFound")
+        if _G.showMonitorNotice ~= nil then
+            _G.showMonitorNotice("Network error", {
+                message,
+                "Attach a wireless modem",
+                "and restart this computer."
+            })
+        end
+        error(message)
     end
+
+    _G.wirelessModem.open(_G.modemChannel)
 end
 
 -- function that will grab all attached peripherals, set up the correct one and connect the modem to the server
