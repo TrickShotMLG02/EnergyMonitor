@@ -12,6 +12,10 @@ EnergyMonitor uses three computer roles:
 
 All computers in the same EnergyMonitor network must use the same modem channel/port and have a wireless modem attached.
 
+## Preview
+
+![EnergyMonitor monitor UI](docs/images/monitor.png)
+
 ## Installation
 
 On each ComputerCraft computer, run:
@@ -32,6 +36,8 @@ The installer will ask for:
 - Startup installation
 
 Use the same modem channel/port for every server, client, and monitor that should belong to the same EnergyMonitor network. The default channel is `5`.
+
+If you are installing from a fork, update `repoUrl` in `EnergyMonitor/install/github_downloader.lua` to point at your repository, upload that downloader to Pastebin, and use your own Pastebin code in the install command.
 
 ## Recommended Setup
 
@@ -73,7 +79,33 @@ Mekanism induction ports can be used as either storage clients or transfer clien
 
 ## Custom Peripheral Support
 
-Peripheral detection is registry-based. New custom support can be added by registering storage or transfer handlers in `EnergyMonitor/classes/peripherals/Peripherals.lua`:
+Peripheral detection is registry-based. To add support for another mod or custom peripheral:
+
+1. Add the wrapper class under `EnergyMonitor/classes/peripherals/<modName>/`.
+2. Load that Lua file in `EnergyMonitor/start/start.lua` inside `initClasses()`, in the `Add Mod Support below` section.
+3. Add the new file path to `EnergyMonitor/files.txt` so the installer downloads it.
+4. Register a storage or transfer handler in `EnergyMonitor/classes/peripherals/Peripherals.lua`.
+
+Example class path:
+
+```sh
+EnergyMonitor/classes/peripherals/myMod/MyStorage.lua
+```
+
+Example `start.lua` entry:
+
+```lua
+-- My Mod Support
+shell.run(periPath.."myMod/MyStorage.lua")
+```
+
+Example `files.txt` entry in the `class.files` list:
+
+```lua
+"classes/peripherals/myMod/MyStorage.lua",
+```
+
+Example storage registration in `Peripherals.lua`:
 
 ```lua
 _G.registerEnergyStorageSupport({
@@ -87,7 +119,7 @@ _G.registerEnergyStorageSupport({
 })
 ```
 
-Transfer handlers use the same shape, but usually pass `ctx.transferType` to the wrapper constructor.
+Transfer handlers use the same shape, but usually pass `ctx.transferType` to the wrapper constructor. Put more specific handlers before generic fallback handlers so a custom peripheral is not claimed by generic method detection first.
 
 ## Configuration
 
@@ -120,6 +152,10 @@ Check that:
 - Every computer has a wireless modem.
 - The client is installed with the correct peripheral type.
 
+When the monitor cannot reach the server, it shows a network error notice:
+
+![EnergyMonitor network error notice](docs/images/monitor_network_error.png)
+
 **A transfer rate shows `0`**
 
 Some peripherals do not expose every transfer method. EnergyMonitor ignores missing peripheral methods and reports `0` instead of crashing. Enable debug mode to see which method is missing.
@@ -131,3 +167,22 @@ Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks hig
 ## Updating
 
 The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates.
+
+## Contributing
+
+Contributions are welcome, especially support for additional energy peripherals, monitor UI improvements, installer improvements, and bug fixes.
+
+Please make pull requests easy to review:
+
+- Create the change in a fork of this repository.
+- Use a separate branch with a clear name, such as `feature/mekanism-buffer-support`, `fix/modem-timeout-notice`, or `docs/custom-peripherals`.
+- Keep each pull request focused on one purpose. Avoid mixing unrelated refactoring, formatting, feature work, and bug fixes in the same PR.
+- Document user-facing changes in this README when behavior, setup, configuration, supported peripherals, or troubleshooting changes.
+- Add new downloaded files to `EnergyMonitor/files.txt`; otherwise the installer will not fetch them.
+- Describe what changed in the PR description and mention why the change is needed.
+- Include how you tested the change, for example the ComputerCraft role used, attached peripheral type, modem channel, and whether the monitor UI was checked.
+- Include screenshots for monitor UI changes when possible.
+- Avoid changing default configuration or update behavior unless the PR clearly explains the impact.
+- Do not commit local IDE files, temporary files, logs, or ComputerCraft runtime state.
+
+For new peripheral support, include the peripheral type name, the methods exposed by the peripheral, the mod name/version if known, and whether the device acts as storage, transfer, or both.
