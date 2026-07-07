@@ -13,28 +13,38 @@ local MekanismEnergyStorage = setmetatable({
     -- mekanism uses Joule which is 0.4 times RF
     energy = function(self)
         if self.useGetEnergy then
-            return defaultNil(self.id.getEnergy(), 0) * 0.4
+            return _G.callPeripheralMethod(self.id, "getEnergy", 0) * 0.4
         end
         if self.useGetTotalEnergy then
-            return defaultNil(self.id.getTotalEnergy(), 0) * 0.4
+            return _G.callPeripheralMethod(self.id, "getTotalEnergy", 0) * 0.4
         end
+        return 0
     end,
     capacity = function(self)
         if self.useGetEnergyCapacity then
-            return defaultNil(self.id.getEnergyCapacity(), 0) * 0.4
+            return _G.callPeripheralMethod(self.id, "getEnergyCapacity", 0) * 0.4
         end
         if self.useGetMaxEnergy then
-            return defaultNil(self.id.getMaxEnergy(), 0) * 0.4
+            return _G.callPeripheralMethod(self.id, "getMaxEnergy", 0) * 0.4
         end
         if self.useGetTotalMaxEnergy then
-            return defaultNil(self.id.getTotalMaxEnergy(), 0) * 0.4
+            return _G.callPeripheralMethod(self.id, "getTotalMaxEnergy", 0) * 0.4
         end
+        return 0
     end,
     percentage = function(self)
-        return defaultNan(math.floor(self:energy()/self:capacity()*100), 0)
+        local capacity = self:capacity()
+        if capacity <= 0 then
+            return 0
+        end
+        return _G.defaultNan(math.floor(self:energy() / capacity * 100), 0)
     end,
     percentagePrecise = function(self)
-        return defaultNan(self:energy()/self:capacity()*100, 0)
+        local capacity = self:capacity()
+        if capacity <= 0 then
+            return 0
+        end
+        return _G.defaultNan(self:energy() / capacity * 100, 0)
     end
 }, {__index = EnergyStorage})
 

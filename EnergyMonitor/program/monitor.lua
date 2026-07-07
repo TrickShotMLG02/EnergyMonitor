@@ -175,7 +175,11 @@ local toggleFilterShowSpecificTypeText
 listen = function()
     -- Receive data from server
     while true do
-        local msg = _G.receiveMessage()
+        local msg = _G.receiveMessage({
+            type = _G.MessageType.Monitor,
+            sender = _G.Sender.Server,
+            recipient = _G.Sender.Monitor
+        })
 
         if msg.type == _G.MessageType.Monitor and msg.sender == _G.Sender.Server then
             
@@ -193,7 +197,7 @@ listen = function()
             end
 
             -- extract data from message
-            local data = msg.messageData.data
+            local data = msg.data
 
             capacitors = data.capacitors
             capacitorsCount = data.capacitorsCount

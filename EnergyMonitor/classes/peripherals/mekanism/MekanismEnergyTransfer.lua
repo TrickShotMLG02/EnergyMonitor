@@ -5,16 +5,16 @@ local MekanismEnergyTransfer = setmetatable({
 
     -- Basic Methods
     transferRateInput = function(self)
-        if transferType == "input" or transferType == "both" then
-            return defaultNil(self.id.getLastInput(), 0) * 0.4
+        if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getLastInput", 0) * 0.4
         else
             return 0
         end
     end,
 
     transferRateOutput = function(self)
-        if transferType == "output" or transferType == "both" then
-            return defaultNil(self.id.getLastOutput(), 0) * 0.4
+        if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
+            return _G.callPeripheralMethod(self.id, "getLastOutput", 0) * 0.4
         else
             return 0
         end

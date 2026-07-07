@@ -155,3 +155,26 @@ end
 function _G.defaultNan ( val , def )
   return ternary(val ~= val, def, val)
 end
+
+function _G.callPeripheralMethod(peripheralObject, methodName, defaultValue, ...)
+  if peripheralObject == nil or methodName == nil or type(peripheralObject[methodName]) ~= "function" then
+    if _G.debugOutput ~= nil then
+      _G.debugOutput("Peripheral method unavailable: " .. tostring(methodName))
+    end
+    return defaultValue
+  end
+
+  local args = {...}
+  local success, result = pcall(function()
+    return peripheralObject[methodName](unpack(args))
+  end)
+
+  if not success then
+    if _G.debugOutput ~= nil then
+      _G.debugOutput("Peripheral method failed: " .. tostring(methodName) .. " - " .. tostring(result))
+    end
+    return defaultValue
+  end
+
+  return _G.defaultNil(result, defaultValue)
+end
