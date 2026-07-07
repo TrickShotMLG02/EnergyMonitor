@@ -1,7 +1,5 @@
 # EnergyMonitor
 
-<!-- TODO: Update the Pastebin ID used in the installation command. -->
-
 EnergyMonitor is a ComputerCraft/CC:Tweaked program for monitoring energy storage and transfer rates across multiple computers and peripherals. A server collects data from client computers and broadcasts a combined view to one or more monitor computers.
 
 ## How It Works
