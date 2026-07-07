@@ -350,7 +350,7 @@ end
 
 -- function to update the stored energy on UI
 updateEnergyDisplay = function()
-    energyLbl:setText("Energy: " .. _G.numberToEnergyUnit(storedEnergy) .. "/" .. _G.numberToEnergyUnit(maxEnergy) .. " (" .. _G.formatDecimals(energyPercentage, 1) .. "%)")
+    energyLbl:setText("Energy: " .. _G.numberToEnergyUnit(storedEnergy) .. "/" .. _G.numberToEnergyUnit(maxEnergy) .. " (" .. _G.formatDecimals(energyPercentage, 2) .. "%)")
     energyBar:setProgress(tonumber(_G.defaultInf(_G.defaultNil(_G.formatDecimals(energyPercentage, 0), 0), 0)))
 end
 
