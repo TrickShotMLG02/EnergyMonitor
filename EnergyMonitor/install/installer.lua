@@ -507,7 +507,7 @@ if not update then
   print(selectedLang:getText("installerOutroLineFour"))
   print()
   print("TrickShotMLG")
-  print("(c) 2024")
+  print("(c) 2026")
 
   local x,y = term.getSize()
   term.setTextColor(colors.yellow)
