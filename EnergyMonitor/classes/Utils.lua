@@ -35,6 +35,10 @@ function _G.convertTicksToTime(ticks)
     finalOutput = finalOutput .. seconds % 60 .. "s"
   end
 
+  if finalOutput == "" then
+    return "0s"
+  end
+
   return finalOutput
 end
 

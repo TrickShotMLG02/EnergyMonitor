@@ -157,6 +157,7 @@ local updateDisplayCells
 local countDisplayableCells
 local updatePageCount
 local updateMonitorValues
+local updateRuntimeFooter
 local showServerNotice
 local hideServerNotice
 local animateButtonClick
@@ -191,19 +192,15 @@ listen = function()
         }, 10)
 
         if msg == nil then
-            local clock = os.clock()
-            if clock - lastServerWarning >= 10 then
-                lastServerWarning = clock
+            local now = os.clock()
+            if now - lastServerWarning >= 10 then
+                lastServerWarning = now
                 showServerNotice()
             end
         elseif msg.type == _G.MessageType.Monitor and msg.sender == _G.Sender.Server then
             hideServerNotice()
             
             local clock = os.clock()
-            
-            -- print time running to footer of monitor
-            timeLbl:setText("Time running: " .. convertTicksToTime(clock * 20))
-            
             if debugPrint then
                 term.redirect(term.native())
                 term.clear()
@@ -290,7 +287,7 @@ setupMonitor = function()
         animateButtonClick(self)
       end), nextPage)
 	versionFooter:addLabel():setText("version: " .. _G.version):setFontSize(1):setSize("parent.w/2", 1):setPosition("parent.w/2", versionFooterHeight):setTextAlign("right"):setForeground(colors.gray)
-	timeLbl = versionFooter:addLabel():setText("Time running: "):setFontSize(1):setSize("parent.w/2", 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+	timeLbl = versionFooter:addLabel():setText("Time running: 0s"):setFontSize(1):setSize("parent.w/2", 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
 
     noticeFrame = monitorRoot:addFrame()
         :setBackground(colors.gray)
@@ -469,6 +466,15 @@ updateMonitorValues = function()
         end
 
         os.sleep(0.1)
+    end
+end
+
+updateRuntimeFooter = function()
+    while true do
+        if timeLbl ~= nil and timeLbl.setText ~= nil then
+            timeLbl:setText("Time running: " .. _G.convertTicksToTime(os.clock() * 20))
+        end
+        os.sleep(1)
     end
 end
 
@@ -738,7 +744,7 @@ end
 print("THIS IS THE MONITOR PROGRAM!")
 
 -- Run the pinger and the listener and monitor updaters in parallel
-parallel.waitForAll(setupMonitor, listen, updateMonitorValues)
+parallel.waitForAll(setupMonitor, listen, updateMonitorValues, updateRuntimeFooter)
 
 --------------------------------------
 -- ACTUAL MONITOR PROGRAM ENDS HERE --
