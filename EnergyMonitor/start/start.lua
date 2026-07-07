@@ -92,6 +92,11 @@ end
 --Check for updates
 function _G.checkUpdates()
 
+	if version == nil or version == "n/a" then
+		print("No installed version set. Skipping update check.")
+		return
+	end
+
 	--Check current branch (release or beta)
 	local currBranch = ""
 
@@ -113,6 +118,7 @@ function _G.checkUpdates()
 			print("Couldn't get remote version from github. Retrying in 5 seconds...")
 			os.sleep(5)
 			success, ErrorStatement = pcall(downloadFile, repoUrl..currBranch.."/EnergyMonitor/",currBranch..".ver")
+			tries = tries + 1
 		else 
 			print("Couldn't get remote version from github. Continuing...")
 			return
@@ -133,8 +139,16 @@ function _G.checkUpdates()
 		print("Couldn't get remote version from gitlab.")
 	else
 		-- only used to check for update since eg. 1.1-XXX > 1.1.5-XXX
-		vNum = string.sub(version, 0, string.find(version, "-")-1)
-		rvNum = string.sub(remoteVer, 0, string.find(remoteVer, "-")-1)
+		local versionSeparator = string.find(version, "-")
+		local remoteVersionSeparator = string.find(remoteVer, "-")
+
+		if versionSeparator == nil or remoteVersionSeparator == nil then
+			print("Couldn't compare versions. Continuing...")
+			return
+		end
+
+		vNum = string.sub(version, 0, versionSeparator-1)
+		rvNum = string.sub(remoteVer, 0, remoteVersionSeparator-1)
 
 		print("remoteVer: "..remoteVer)
 		print("Update? -> "..tostring(rvNum > vNum))

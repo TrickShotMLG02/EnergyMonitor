@@ -218,7 +218,7 @@ function getVersion()
   local list = fileData.readAll()
   fileData.close()
 
-  return list
+  return string.gsub(string.gsub(list, "^%s+", ""), "%s+$", "")
 end
 
 function waitForEnter()
