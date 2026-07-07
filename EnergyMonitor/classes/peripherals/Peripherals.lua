@@ -255,7 +255,15 @@ end
 function setupModemConnection()
     debugOutput("Setup Modem Connection on channel " .. _G.modemChannel)
     if not _G.enableWireless then
-        error(_G.language:getText("noModemFound"))
+        local message = _G.language:getText("noModemFound")
+        if _G.showMonitorNotice ~= nil then
+            _G.showMonitorNotice("Network error", {
+                message,
+                "Attach a wireless modem",
+                "and restart this computer."
+            })
+        end
+        error(message)
     end
 
     _G.wirelessModem.open(_G.modemChannel)

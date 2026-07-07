@@ -165,44 +165,55 @@ function _G.checkUpdates()
 	shell.run("rm "..currBranch..".ver")
 end
 
+function _G.showMonitorNotice(title, lines)
+	if _G.program == "client" or _G.program == "server" then
+		return
+	end
+
+	if _G.controlMonitor == nil or _G.controlMonitor == "" then
+		return
+	end
+
+	local ok = pcall(function()
+		local x,y = _G.controlMonitor.getSize()
+		local boxWidth = math.min(36, x)
+		local boxHeight = math.min(8, y)
+		local x1 = math.max(1, math.floor((x - boxWidth) / 2) + 1)
+		local y1 = math.max(1, math.floor((y - boxHeight) / 2) + 1)
+
+		_G.controlMonitor.setBackgroundColor(colors.black)
+		_G.controlMonitor.clear()
+		_G.controlMonitor.setBackgroundColor(colors.gray)
+		_G.controlMonitor.setTextColor(colors.gray)
+
+		for i=0,boxHeight-1 do
+			_G.controlMonitor.setCursorPos(x1,y1+i)
+			_G.controlMonitor.write(string.rep(" ", boxWidth))
+		end
+
+		_G.controlMonitor.setTextColor(colors.white)
+		_G.controlMonitor.setCursorPos(x1 + math.max(0, math.floor((boxWidth - string.len(title)) / 2)), y1 + 1)
+		_G.controlMonitor.write(string.sub(title, 1, boxWidth))
+
+		for i=1,math.min(#lines, boxHeight - 3) do
+			local line = tostring(lines[i])
+			_G.controlMonitor.setCursorPos(x1 + math.max(0, math.floor((boxWidth - string.len(line)) / 2)), y1 + 1 + i)
+			_G.controlMonitor.write(string.sub(line, 1, boxWidth))
+		end
+	end)
+
+	if not ok then
+		debugOutput("Could not draw monitor notice.")
+	end
+end
 
 function _G.doUpdate(toVer,branch)
 
-	if program ~= "client" and program ~= "server" then
-		--Set the monitor up
-		local x,y = controlMonitor.getSize()
-		controlMonitor.setBackgroundColor(colors.black)
-		controlMonitor.clear()
-
-		local x1 = x/2-15
-		local y1 = y/2-4
-		local x2 = x/2
-		local y2 = y/2
-
-		--Draw Box
-		controlMonitor.setBackgroundColor(colors.gray)
-		controlMonitor.setTextColor(colors.gray)
-		controlMonitor.setCursorPos(x1,y1)
-		for i=1,8 do
-			controlMonitor.setCursorPos(x1,y1+i-1)
-			controlMonitor.write("                              ") --30 chars
-		end
-
-		--Print update message
-		controlMonitor.setTextColor(colors.white)
-
-		controlMonitor.setCursorPos(x2-9,y1+1)
-		controlMonitor.write(_G.language:getText("updateAvailableLineOne")) --17 chars
-
-		controlMonitor.setCursorPos(x2-(math.ceil(string.len(toVer)/2)),y1+3)
-		controlMonitor.write(toVer)
-
-		controlMonitor.setCursorPos(x2-8,y1+5)
-		controlMonitor.write(_G.language:getText("updateAvailableLineTwo")) --15 chars
-
-		controlMonitor.setCursorPos(x2-12,y1+6)
-		controlMonitor.write(_G.language:getText("updateAvailableLineThree")) --24 chars
-	end
+	_G.showMonitorNotice(_G.language:getText("updateAvailableLineOne"), {
+		toVer,
+		_G.language:getText("updateAvailableLineTwo"),
+		_G.language:getText("updateAvailableLineThree")
+	})
 
 	--Print install instructions to the terminal
 	term.clear()
