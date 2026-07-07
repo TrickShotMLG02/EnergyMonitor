@@ -22,7 +22,15 @@ local storageSupport = {}
 local transferSupport = {}
 
 local function hasMethod(peri, methodName)
-    return peri ~= nil and type(peri[methodName]) == "function"
+    if peri == nil then
+        return false
+    end
+
+    local success, method = pcall(function()
+        return peri[methodName]
+    end)
+
+    return success and type(method) == "function"
 end
 
 local function peripheralTypeContains(periType, pattern)

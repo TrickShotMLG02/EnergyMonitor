@@ -273,6 +273,28 @@ local function matchesFilter(message, filter)
         and valueMatches(message.recipient, filter.recipient or filter.recipients)
 end
 
+local function debugTransport(message)
+    if _G.debugOutput ~= nil then
+        _G.debugOutput(message)
+    end
+end
+
+local function parseMessageSummary(message)
+    if type(message) ~= "table" then
+        return "not a table"
+    end
+
+    return "protocol=" .. tostring(message.protocol)
+        .. ", version=" .. tostring(message.version)
+        .. ", type=" .. _G.parseType(message.type)
+        .. ", sender=" .. _G.parseSender(message.sender)
+        .. ", recipient=" .. _G.parseSender(message.recipient)
+end
+
+local function debugIgnoredMessage(reason, message)
+    debugTransport("Ignored modem message: " .. reason .. " (" .. parseMessageSummary(message) .. ")")
+end
+
 
 -- function that is used to serialize and transmit a message object over the modem
 function _G.sendMessage(message, channel)
@@ -300,14 +322,32 @@ end
 
 -- function that is used to receive a transmitted message over the modem and deserialize it.
 -- Optional filter fields: type/types, sender/senders, recipient/recipients.
-function _G.receiveMessage(filter)
-    while true do
-        local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent("modem_message")
+function _G.receiveMessage(filter, timeout)
+    local timeoutTimer = nil
+    if timeout ~= nil and timeout > 0 then
+        timeoutTimer = os.startTimer(timeout)
+    end
 
-        if senderChannel == _G.modemChannel then
+    while true do
+        local event, p1, p2, p3, p4, p5 = os.pullEvent()
+
+        if event == "timer" and p1 == timeoutTimer then
+            return nil
+        elseif event == "modem_message" then
+            local modemSide = p1
+            local senderChannel = p2
+            local replyChannel = p3
+            local message = p4
+            local senderDistance = p5
             local deserializedMessage = normalizeMessage(deserializeMessage(message))
 
-            if _G.isValidMessage(deserializedMessage) and matchesFilter(deserializedMessage, filter) then
+            if senderChannel ~= _G.modemChannel then
+                debugIgnoredMessage("wrong channel " .. tostring(senderChannel), deserializedMessage)
+            elseif not _G.isValidMessage(deserializedMessage) then
+                debugIgnoredMessage("invalid EnergyMonitor packet", deserializedMessage)
+            elseif not matchesFilter(deserializedMessage, filter) then
+                debugIgnoredMessage("packet did not match receive filter", deserializedMessage)
+            else
                 return deserializedMessage, {
                     modemSide = modemSide,
                     senderChannel = senderChannel,

@@ -1,5 +1,6 @@
 print("THIS IS THE CLIENT PROGRAM!")
 print("Waiting for server ping...")
+print("Listening on modem channel: " .. tostring(_G.modemChannel))
 
 while true do
     -- Receive ping from server
@@ -7,8 +8,17 @@ while true do
         type = _G.MessageType.Ping,
         sender = _G.Sender.Server,
         recipient = _G.Sender.Client
-    })
-    if msg.type == _G.MessageType.Ping and msg.sender == _G.Sender.Server then
+    }, 5)
+
+    if msg == nil then
+        term.clear()
+        term.setCursorPos(1,1)
+        print("THIS IS THE CLIENT PROGRAM!")
+        print("Waiting for server ping...")
+        print("Listening on modem channel: " .. tostring(_G.modemChannel))
+        print("No matching ping received in the last 5 seconds.")
+        print("Enable debug = 1 in options.txt to see ignored packets.")
+    elseif msg.type == _G.MessageType.Ping and msg.sender == _G.Sender.Server then
         term.clear()
         term.setCursorPos(1,1)
 
