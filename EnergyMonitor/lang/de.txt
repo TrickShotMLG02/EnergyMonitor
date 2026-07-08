@@ -10,6 +10,7 @@
   showOnStartup = "Hauptmenue zeigen",
   terminatedProgram = "Programm beendet!",
   updateProgram = "Soll das Update installiert werden? (j/n)",
+  autoUpdateProgram = "Fuehre automatisches Update aus...",
   updatingStartup = "Startdatei...",
   removingOldFiles = "Alte Dateien entfernen...",
   done = "Fertig!",
@@ -67,6 +68,10 @@
   updateAvailableLineOne = "Update verfuegbar!",
   updateAvailableLineTwo = "Zum installieren",
   updateAvailableLineThree = "in den Computer schauen",
+  updateFooterAvailable = " | Update verfuegbar",
+  autoUpdateLineOne = "Automatisches Update verfuegbar!",
+  autoUpdateLineTwo = "Update wird jetzt ausgefuehrt",
+  autoUpdateLineThree = "Bitte warten",
   
   installerIntroLineOne = "Stromüberwachung von TrickShotMLG",
   installerIntroLineThree = "Über das Programm:",
