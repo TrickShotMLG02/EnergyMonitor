@@ -23,6 +23,7 @@ local outputRate = 0
 local effectiveRate = 0
 local monitorUpdateAvailable = false
 local lastUpdateCheck = -60
+local noticeBlinkState = false
 
 local displayFilter = {
     showDisconnected = true,
@@ -318,7 +319,7 @@ updateVersionFooter = function()
                 versionNoticeLbl:setSize(noticeTextWidth, 1)
                 versionNoticeLbl:setPosition("parent.w-" .. noticeTextWidth, versionFooterHeight)
                 versionNoticeLbl:setTextAlign("left")
-                versionNoticeLbl:setForeground(colors.red)
+                versionNoticeLbl:setForeground(noticeBlinkState and colors.red or versionFooterColor)
                 if versionNoticeLbl.show ~= nil then
                     versionNoticeLbl:show()
                 end
@@ -589,6 +590,11 @@ end
 updateRuntimeFooter = function()
     while true do
         updateRuntimeFooterLabel()
+        if monitorUpdateAvailable then
+            noticeBlinkState = not noticeBlinkState
+        else
+            noticeBlinkState = false
+        end
         checkMonitorUpdates()
         updateVersionFooter()
         os.sleep(1)
