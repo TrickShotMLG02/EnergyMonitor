@@ -330,6 +330,9 @@ function initClasses()
 	-- Add Mod Support below --
 	---------------------------
 
+    -- Advanced Peripherals Mod Support
+    shell.run(periPath.."advancedPeripherals/EnergyDetector.lua")
+
 	-- Energy Meters Mod Support
 	shell.run(periPath.."energyMeter/EnergyMeter.lua")
 

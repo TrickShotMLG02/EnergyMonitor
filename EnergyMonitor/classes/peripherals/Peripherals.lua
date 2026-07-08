@@ -125,6 +125,16 @@ _G.registerEnergyStorageSupport({
 })
 
 _G.registerEnergyTransferSupport({
+    label = "Energy Detector",
+    matches = function(ctx)
+        return ctx.type == "energyDetector"
+    end,
+    create = function(ctx)
+        return newEnergyDetector("ed0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
     label = "Energy Meter",
     matches = function(ctx)
         return ctx.type == "energymeter"
@@ -275,4 +285,3 @@ function _G.initPeripherals()
     _G.checkPeripherals()
     setupModemConnection()
 end
-
