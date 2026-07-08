@@ -208,20 +208,31 @@ function _G.showMonitorNotice(title, lines)
 end
 
 function _G.doUpdate(toVer,branch)
-
-	_G.showMonitorNotice(_G.language:getText("updateAvailableLineOne"), {
-		toVer,
-		_G.language:getText("updateAvailableLineTwo"),
-		_G.language:getText("updateAvailableLineThree")
-	})
+    if autoUpdate == 1 then
+        _G.showMonitorNotice(_G.language:getText("autoUpdateLineOne"), {
+            toVer,
+            _G.language:getText("autoUpdateLineTwo"),
+            _G.language:getText("autoUpdateLineThree")
+        })
+    else
+        _G.showMonitorNotice(_G.language:getText("updateAvailableLineOne"), {
+            toVer,
+            _G.language:getText("updateAvailableLineTwo"),
+            _G.language:getText("updateAvailableLineThree")
+        })
+    end
 
 	--Print install instructions to the terminal
 	term.clear()
 	term.setCursorPos(1,1)
 	local tx,ty = term.getSize()
 
-	print(_G.language:getText("updateProgram"))
-	term.write("Input: ")
+    if autoUpdate == 1 then
+        print(_G.language:getText("autoUpdateProgram"))
+    else
+        print(_G.language:getText("updateProgram"))
+        term.write("Input: ")
+    end
 
 --
     --Run Counter for installation skipping

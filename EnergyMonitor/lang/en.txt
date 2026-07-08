@@ -10,6 +10,7 @@
   showOnStartup = "Show on startup",
   terminatedProgram = "Program Terminated!",
   updateProgram = "Do you want to install the update? (y/n)",
+  autoUpdateProgram = "Performing auto-update...",
   updatingStartup = "Startup file...",
   removingOldFiles = "Removing old files...",
   done = "Done!",
@@ -67,6 +68,9 @@
   updateAvailableLineOne = "Update available!",
   updateAvailableLineTwo = "To install look",
   updateAvailableLineThree = "at the computer terminal",
+  autoUpdateLineOne = "Auto-update available!",
+  autoUpdateLineTwo = "Updating now",
+  autoUpdateLineThree = "Please wait",
   
   installerIntroLineOne = "Energy Monitor Program by TrickShotMLG",
   installerIntroLineThree = "About this program:",
