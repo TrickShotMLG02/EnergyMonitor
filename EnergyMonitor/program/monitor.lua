@@ -88,6 +88,7 @@ end
 
 local displayedCells = {}
 local versionLbl = {}
+local versionNoticeLbl = {}
 
 -- create main window
 local main = basalt.addMonitor()
@@ -300,18 +301,38 @@ end
 updateVersionFooter = function()
     if versionLbl ~= nil and versionLbl.setText ~= nil then
         local versionText = "version: " .. _G.version
-        if monitorUpdateAvailable then
-            versionText = versionText .. _G.language:getText("updateFooterAvailable")
-            versionLbl:setForeground(colors.gray)
-        else
-            versionLbl:setForeground(colors.gray)
-        end
-
         local versionTextWidth = math.max(1, string.len(versionText))
-        versionLbl:setSize(versionTextWidth, 1)
-        versionLbl:setPosition("parent.w-" .. versionTextWidth, versionFooterHeight)
-        versionLbl:setText(versionText)
-        versionLbl:setTextAlign("right")
+        local noticeText = _G.language:getText("updateFooterAvailable")
+        local noticeTextWidth = math.max(1, string.len(noticeText))
+
+        versionLbl:setForeground(colors.gray)
+
+        if monitorUpdateAvailable then
+            versionLbl:setText(versionText)
+            versionLbl:setSize(versionTextWidth, 1)
+            versionLbl:setPosition("parent.w-" .. (versionTextWidth + noticeTextWidth + 1), versionFooterHeight)
+            versionLbl:setTextAlign("left")
+
+            if versionNoticeLbl ~= nil and versionNoticeLbl.setText ~= nil then
+                versionNoticeLbl:setText(noticeText)
+                versionNoticeLbl:setSize(noticeTextWidth, 1)
+                versionNoticeLbl:setPosition("parent.w-" .. noticeTextWidth, versionFooterHeight)
+                versionNoticeLbl:setTextAlign("left")
+                versionNoticeLbl:setForeground(colors.red)
+                if versionNoticeLbl.show ~= nil then
+                    versionNoticeLbl:show()
+                end
+            end
+        else
+            versionLbl:setText(versionText)
+            versionLbl:setSize(versionTextWidth, 1)
+            versionLbl:setPosition("parent.w-" .. versionTextWidth, versionFooterHeight)
+            versionLbl:setTextAlign("left")
+
+            if versionNoticeLbl ~= nil and versionNoticeLbl.hide ~= nil then
+                versionNoticeLbl:hide()
+            end
+        end
     end
 end
 
@@ -378,7 +399,8 @@ setupMonitor = function()
     nextBtn = footer:addButton():setText("Next"):setSize(btnWidth, btnHeight):setPosition("parent.w-"..btnWidth, math.ceil(footerHeight / 2) + math.floor(btnHeight / 2)):setBackground(btnDefaultColor):onClick(basalt.schedule(function(self)
         animateButtonClick(self)
       end), nextPage)
-    versionLbl = versionFooter:addLabel():setText("version: " .. _G.version):setFontSize(1):setSize("parent.w/2", 1):setPosition("parent.w/2", versionFooterHeight):setTextAlign("right"):setForeground(colors.gray)
+    versionLbl = versionFooter:addLabel():setText("version: " .. _G.version):setFontSize(1):setSize(1, 1):setPosition("parent.w", versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+    versionNoticeLbl = versionFooter:addLabel():setText(""):setFontSize(1):setSize(1, 1):setPosition("parent.w", versionFooterHeight):setTextAlign("left"):setForeground(colors.red):hide()
     timeLbl = versionFooter:addLabel():setText("Time running: 0s"):setFontSize(1):setSize(1, 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
     updateVersionFooter()
     updateRuntimeFooterLabel()
