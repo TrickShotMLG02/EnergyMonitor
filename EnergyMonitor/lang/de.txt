@@ -68,6 +68,7 @@
   updateAvailableLineOne = "Update verfuegbar!",
   updateAvailableLineTwo = "Zum installieren",
   updateAvailableLineThree = "in den Computer schauen",
+  updateFooterAvailable = " | Update verfuegbar",
   autoUpdateLineOne = "Automatisches Update verfuegbar!",
   autoUpdateLineTwo = "Update wird jetzt ausgefuehrt",
   autoUpdateLineThree = "Bitte warten",
