@@ -170,6 +170,14 @@ Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks hig
 
 The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates.
 
+## Releases
+
+Release branches are handled separately:
+
+- `development` is the beta channel. Merge feature PRs here, then bump `EnergyMonitor/development.ver` in a separate commit when you want to publish a new beta.
+- `main` is the stable channel. Merge `development` into `main` when you are ready for a release, then bump `EnergyMonitor/main.ver` in a separate commit on `main`.
+- After a stable release, merge `main` back into `development` so both branches stay aligned.
+
 ## Contributing
 
 Contributions are welcome, especially support for additional energy peripherals, monitor UI improvements, installer improvements, and bug fixes.
