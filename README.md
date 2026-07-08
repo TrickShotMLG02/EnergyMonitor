@@ -81,6 +81,8 @@ Mekanism induction ports can be used as either storage clients or transfer clien
 
 Peripheral detection is registry-based. To add support for another mod or custom peripheral:
 
+For a concrete implementation example, see [commit `f6869c5`](https://github.com/TrickShotMLG02/EnergyMonitor/commit/f6869c5).
+
 1. Add the wrapper class under `EnergyMonitor/classes/peripherals/<modName>/`.
 2. Load that Lua file in `EnergyMonitor/start/start.lua` inside `initClasses()`, in the `Add Mod Support below` section.
 3. Add the new file path to `EnergyMonitor/files.txt` so the installer downloads it.
