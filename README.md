@@ -21,7 +21,7 @@ All computers in the same EnergyMonitor network must use the same modem channel/
 On each ComputerCraft computer, run:
 
 ```sh
-pastebin get FGfgaAty git
+pastebin get eB43wCY4 git
 git
 ```
 

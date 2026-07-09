@@ -21,7 +21,8 @@ _G.language = {}
 
 --===== Functions for loading and saving the options =====
 
-_G.repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
+--_G.repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
+_G.repoUrl = "https://rawcdn.githack.com/TrickShotMLG02/EnergyMonitor/"
 
 function  _G.debugOutput(message) 
 	if  _G.debugEnabled == 1 then
