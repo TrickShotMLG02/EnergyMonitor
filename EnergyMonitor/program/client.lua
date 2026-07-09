@@ -2,6 +2,11 @@ print("THIS IS THE CLIENT PROGRAM!")
 print("Waiting for server ping...")
 print("Listening on modem channel: " .. tostring(_G.modemChannel))
 
+local function printNoPeripheralWarning()
+    print("WARNING: No supported energy peripheral is attached.")
+    print("Attach a configured capacitor or transfer device.")
+end
+
 while true do
     -- Receive ping from server
     local msg = _G.receiveMessage({
@@ -72,6 +77,8 @@ while true do
             -- send data as update to server
             local msg = _G.NewUpdateToServer(data)
             _G.sendMessage(msg)
+        else
+            printNoPeripheralWarning()
         end
     end
 end
