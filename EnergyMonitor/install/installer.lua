@@ -10,7 +10,7 @@ local arg = {... }
 local update
 local branch = ""
 --local repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
-local repoUrl = "https://rawcdn.githack.com/TrickShotMLG02/EnergyMonitor/"
+local repoUrl = "https://cdn.jsdelivr.net/gh/TrickShotMLG02/EnergyMonitor@"
 local selectedLang = {}
 local installLang = nil
 
