@@ -10,7 +10,8 @@ local selectInstaller = ""
 --Branch & Relative paths to the url and path
 local installLang = "en"
 local relPath = "/EnergyMonitor/"
-local repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
+--local repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
+local repoUrl = "https://cdn.jsdelivr.net/gh/TrickShotMLG02/EnergyMonitor@"
 local branch = "main"
 local relUrl = repoUrl..branch.."/EnergyMonitor/"
 local selectedLang = {}

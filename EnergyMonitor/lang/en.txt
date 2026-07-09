@@ -10,6 +10,7 @@
   showOnStartup = "Show on startup",
   terminatedProgram = "Program Terminated!",
   updateProgram = "Do you want to install the update? (y/n)",
+  autoUpdateProgram = "Performing auto-update...",
   updatingStartup = "Startup file...",
   removingOldFiles = "Removing old files...",
   done = "Done!",
@@ -67,6 +68,10 @@
   updateAvailableLineOne = "Update available!",
   updateAvailableLineTwo = "To install look",
   updateAvailableLineThree = "at the computer terminal",
+  updateFooterAvailable = " | Update available",
+  autoUpdateLineOne = "Auto-update available!",
+  autoUpdateLineTwo = "Updating now",
+  autoUpdateLineThree = "Please wait",
   
   installerIntroLineOne = "Energy Monitor Program by TrickShotMLG",
   installerIntroLineThree = "About this program:",
@@ -74,7 +79,7 @@
   installerIntroLineFive = "You can also attach nearly infinite energymeters and energy storages",
   installerIntroLineSix = "You must connect each computer with a wireless modem (eg. ender modem)",
   installerIntroLineSeven = "Additionally if this is a client, place it next to an energy storage or energy meter",
-  installerIntroLineEight = "The size of the monitor has to be 4 wide and 2 high. (Note, only needed for server)",
+  installerIntroLineEight = "The size of the monitor has to be 4 wide and 2 high.",
   installerIntroLineNine = "That's everything you have to do.",
   
   installerServerOrClient = "If this computer is a server type 's', if it is a remote monitor type 'm', else 'c' for client.",

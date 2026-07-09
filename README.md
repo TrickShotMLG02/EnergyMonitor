@@ -21,7 +21,7 @@ All computers in the same EnergyMonitor network must use the same modem channel/
 On each ComputerCraft computer, run:
 
 ```sh
-pastebin get FGfgaAty git
+pastebin get gUbUpXHt git
 git
 ```
 
@@ -80,6 +80,8 @@ Mekanism induction ports can be used as either storage clients or transfer clien
 ## Custom Peripheral Support
 
 Peripheral detection is registry-based. To add support for another mod or custom peripheral:
+
+For a concrete implementation example, see [commit `f6869c5`](https://github.com/TrickShotMLG02/EnergyMonitor/commit/f6869c5).
 
 1. Add the wrapper class under `EnergyMonitor/classes/peripherals/<modName>/`.
 2. Load that Lua file in `EnergyMonitor/start/start.lua` inside `initClasses()`, in the `Add Mod Support below` section.
@@ -167,6 +169,14 @@ Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks hig
 ## Updating
 
 The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates.
+
+## Releases
+
+Release branches are handled separately:
+
+- `development` is the beta channel. Merge feature PRs here, then bump `EnergyMonitor/development.ver` in a separate commit when you want to publish a new beta.
+- `main` is the stable channel. Prepare the stable version bump on `development`, merge `development` into `main` when you are ready for a release, then let the bump land on `main` through the PR.
+- After a stable release, merge `main` back into `development` so both branches stay aligned.
 
 ## Contributing
 

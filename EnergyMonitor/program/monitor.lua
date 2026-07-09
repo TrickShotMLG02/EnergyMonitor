@@ -21,6 +21,9 @@ local energyPercentage = 0
 local inputRate = 0
 local outputRate = 0
 local effectiveRate = 0
+local monitorUpdateAvailable = false
+local lastUpdateCheck = -60
+local noticeBlinkState = false
 
 local displayFilter = {
     showDisconnected = true,
@@ -85,6 +88,8 @@ end
 -- GUI COMPONENTS
 
 local displayedCells = {}
+local versionLbl = {}
+local versionNoticeLbl = {}
 
 -- create main window
 local main = basalt.addMonitor()
@@ -225,12 +230,121 @@ listen = function()
             -- calculate if the energy storage is being charged or discharged
             effectiveRate = inputRate - outputRate
 			
-            -- sort the transferrers that are displayed on screen based on filters
-            sortTransferrers()
+			-- sort the transferrers that are displayed on screen based on filters
+			sortTransferrers()
 
             -- update monitor display with new values
 			reloadPage()
+            updateVersionFooter()
         end
+    end
+end
+
+checkMonitorUpdates = function()
+    local now = os.clock()
+    if now - lastUpdateCheck < 60 then
+        return
+    end
+
+    lastUpdateCheck = now
+
+    if _G.version == nil or _G.version == "n/a" or _G.repoUrl == nil then
+        monitorUpdateAvailable = false
+        updateVersionFooter()
+        return
+    end
+
+    local currBranch = ""
+    if string.find(_G.version, "beta") or string.find(_G.version, "development") then
+        currBranch = "development"
+    else
+        currBranch = "main"
+    end
+
+    local ok = pcall(_G.downloadFile, _G.repoUrl..currBranch.."/EnergyMonitor/", currBranch..".ver")
+    if not ok then
+        monitorUpdateAvailable = false
+        updateVersionFooter()
+        return
+    end
+
+    local file = fs.open(currBranch..".ver", "r")
+    if file == nil then
+        monitorUpdateAvailable = false
+        updateVersionFooter()
+        return
+    end
+
+    local remoteVer = file.readLine()
+    file.close()
+    shell.run("rm "..currBranch..".ver")
+
+    if remoteVer == nil then
+        monitorUpdateAvailable = false
+        updateVersionFooter()
+        return
+    end
+
+    local versionSeparator = string.find(_G.version, "-")
+    local remoteVersionSeparator = string.find(remoteVer, "-")
+    if versionSeparator == nil or remoteVersionSeparator == nil then
+        monitorUpdateAvailable = false
+        updateVersionFooter()
+        return
+    end
+
+    local vNum = string.sub(_G.version, 0, versionSeparator - 1)
+    local rvNum = string.sub(remoteVer, 0, remoteVersionSeparator - 1)
+    monitorUpdateAvailable = rvNum > vNum
+    updateVersionFooter()
+end
+
+updateVersionFooter = function()
+    if versionLbl ~= nil and versionLbl.setText ~= nil then
+        local versionText = "version: " .. _G.version
+        local versionTextWidth = math.max(1, string.len(versionText))
+        local noticeText = _G.language:getText("updateFooterAvailable")
+        local noticeTextWidth = math.max(1, string.len(noticeText))
+
+        versionLbl:setForeground(colors.gray)
+
+        if monitorUpdateAvailable then
+            versionLbl:setText(versionText)
+            versionLbl:setSize(versionTextWidth, 1)
+            versionLbl:setPosition("parent.w-" .. (versionTextWidth + noticeTextWidth + 1), versionFooterHeight)
+            versionLbl:setTextAlign("left")
+
+            if versionNoticeLbl ~= nil and versionNoticeLbl.setText ~= nil then
+                versionNoticeLbl:setText(noticeText)
+                versionNoticeLbl:setSize(noticeTextWidth, 1)
+                versionNoticeLbl:setPosition("parent.w-" .. noticeTextWidth, versionFooterHeight)
+                versionNoticeLbl:setTextAlign("left")
+                versionNoticeLbl:setForeground(noticeBlinkState and colors.red or versionFooterColor)
+                if versionNoticeLbl.show ~= nil then
+                    versionNoticeLbl:show()
+                end
+            end
+        else
+            versionLbl:setText(versionText)
+            versionLbl:setSize(versionTextWidth, 1)
+            versionLbl:setPosition("parent.w-" .. versionTextWidth, versionFooterHeight)
+            versionLbl:setTextAlign("left")
+
+            if versionNoticeLbl ~= nil and versionNoticeLbl.hide ~= nil then
+                versionNoticeLbl:hide()
+            end
+        end
+    end
+end
+
+updateRuntimeFooterLabel = function()
+    if timeLbl ~= nil and timeLbl.setText ~= nil then
+        local runtimeText = "Time running: " .. _G.convertTicksToTime(os.clock() * 20)
+        local runtimeTextWidth = math.max(1, string.len(runtimeText))
+        timeLbl:setText(runtimeText)
+        timeLbl:setSize(runtimeTextWidth, 1)
+        timeLbl:setPosition(1, versionFooterHeight)
+        timeLbl:setTextAlign("left")
     end
 end
 
@@ -286,8 +400,12 @@ setupMonitor = function()
     nextBtn = footer:addButton():setText("Next"):setSize(btnWidth, btnHeight):setPosition("parent.w-"..btnWidth, math.ceil(footerHeight / 2) + math.floor(btnHeight / 2)):setBackground(btnDefaultColor):onClick(basalt.schedule(function(self)
         animateButtonClick(self)
       end), nextPage)
-	versionFooter:addLabel():setText("version: " .. _G.version):setFontSize(1):setSize("parent.w/2", 1):setPosition("parent.w/2", versionFooterHeight):setTextAlign("right"):setForeground(colors.gray)
-	timeLbl = versionFooter:addLabel():setText("Time running: 0s"):setFontSize(1):setSize("parent.w/2", 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+    versionLbl = versionFooter:addLabel():setText("version: " .. _G.version):setFontSize(1):setSize(1, 1):setPosition("parent.w", versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+    versionNoticeLbl = versionFooter:addLabel():setText(""):setFontSize(1):setSize(1, 1):setPosition("parent.w", versionFooterHeight):setTextAlign("left"):setForeground(colors.red):hide()
+    timeLbl = versionFooter:addLabel():setText("Time running: 0s"):setFontSize(1):setSize(1, 1):setPosition(1, versionFooterHeight):setTextAlign("left"):setForeground(colors.gray)
+    updateVersionFooter()
+    updateRuntimeFooterLabel()
+    checkMonitorUpdates()
 
     noticeFrame = monitorRoot:addFrame()
         :setBackground(colors.gray)
@@ -471,9 +589,14 @@ end
 
 updateRuntimeFooter = function()
     while true do
-        if timeLbl ~= nil and timeLbl.setText ~= nil then
-            timeLbl:setText("Time running: " .. _G.convertTicksToTime(os.clock() * 20))
+        updateRuntimeFooterLabel()
+        if monitorUpdateAvailable then
+            noticeBlinkState = not noticeBlinkState
+        else
+            noticeBlinkState = false
         end
+        checkMonitorUpdates()
+        updateVersionFooter()
         os.sleep(1)
     end
 end

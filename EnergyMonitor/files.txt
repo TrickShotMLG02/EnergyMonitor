@@ -10,6 +10,7 @@
     files = {
       "classes/peripherals/base/EnergyStorage.lua",
       "classes/peripherals/base/EnergyTransfer.lua",
+      "classes/peripherals/advancedPeripherals/EnergyDetector.lua",
       "classes/peripherals/draconicEvolution/DraconicCoreEnergyStorage.lua",
       "classes/peripherals/draconicEvolution/DraconicCoreEnergyTransfer.lua",
       "classes/peripherals/draconicEvolution/DraconicFluxGateEnergyTransfer.lua",
