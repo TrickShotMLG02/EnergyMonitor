@@ -79,7 +79,7 @@
   installerIntroLineFive = "You can also attach nearly infinite energymeters and energy storages",
   installerIntroLineSix = "You must connect each computer with a wireless modem (eg. ender modem)",
   installerIntroLineSeven = "Additionally if this is a client, place it next to an energy storage or energy meter",
-  installerIntroLineEight = "The size of the monitor has to be 4 wide and 2 high. (Note, only needed for server)",
+  installerIntroLineEight = "The size of the monitor has to be 4 wide and 2 high.",
   installerIntroLineNine = "That's everything you have to do.",
   
   installerServerOrClient = "If this computer is a server type 's', if it is a remote monitor type 'm', else 'c' for client.",
