@@ -302,6 +302,7 @@ function configureInstall()
       transferType = "n/a",
       modemChannel = 5,
       historyMinutes = 5,
+      historySaveInterval = 15,
       monitorOpenGraphOnStart = false
     }
 
@@ -330,6 +331,7 @@ function configureInstall()
 
     if config.program == "monitor" then
       config.historyMinutes = promptNumber("Set the stored energy history window in minutes", 5, 1, 120)
+      config.historySaveInterval = promptNumber("Set the history save interval in seconds", 15, 5, 3600)
       config.monitorOpenGraphOnStart = promptYesNoInline("Open the graph view when this monitor starts?")
     end
 
@@ -347,6 +349,7 @@ function configureInstall()
 
     if config.program == "monitor" then
       print("History window (minutes): "..config.historyMinutes)
+      print("History save interval (seconds): "..config.historySaveInterval)
       print("Open graph on start: "..tostring(config.monitorOpenGraphOnStart))
     end
 
@@ -481,6 +484,7 @@ if not update then
   updateOptionFile("peripheralType", installConfig.peripheralType)
   updateOptionFile("modemChannel", installConfig.modemChannel)
   updateOptionFile("historyMinutes", installConfig.historyMinutes)
+  updateOptionFile("historySaveInterval", installConfig.historySaveInterval)
   updateOptionFile("monitorOpenGraphOnStart", installConfig.monitorOpenGraphOnStart)
 end
 
