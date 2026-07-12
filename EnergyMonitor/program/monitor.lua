@@ -624,26 +624,59 @@ updateHistoryOverlay = function()
         historyExitBtn:setText("Back")
     end
 
+    local inOutText = "In: " .. _G.numberToEnergyUnit(inputRate) .. "/t  Out: " .. _G.numberToEnergyUnit(outputRate) .. "/t"
+    local rateColor = colors.yellow
+    local rateText = "Eff: +0.0 FE/t"
+    if effectiveRate < 0 then
+        rateColor = colors.red
+        rateText = "Eff: -" .. _G.numberToEnergyUnit(math.abs(effectiveRate)) .. "/t"
+    elseif effectiveRate > 0 then
+        rateColor = colors.lime
+        rateText = "Eff: +" .. _G.numberToEnergyUnit(effectiveRate) .. "/t"
+    end
+    local etaText = "ETA: " .. getEtaText()
+
+    local headerWidth = nil
+    if historyHeader ~= nil and historyHeader.getSize ~= nil then
+        local headerW = historyHeader:getSize()
+        headerWidth = tonumber(headerW)
+    end
+    if headerWidth == nil or headerWidth < 1 then
+        headerWidth = 1
+    end
+
+    local inOutWidth = math.max(1, string.len(inOutText))
+    local rateWidth = math.max(1, string.len(rateText))
+    local etaWidth = math.max(1, string.len(etaText))
+    local gap = 2
+
     if historyInOutLbl ~= nil and historyInOutLbl.setText ~= nil then
-        historyInOutLbl:setText("In: " .. _G.numberToEnergyUnit(inputRate) .. "/t  Out: " .. _G.numberToEnergyUnit(outputRate) .. "/t")
+        historyInOutLbl:setText(inOutText)
+        historyInOutLbl:setSize(math.max(1, math.min(inOutWidth, headerWidth - 1)), 1)
+        historyInOutLbl:setPosition(2, 2)
+        historyInOutLbl:setTextAlign("left")
     end
 
     if historyRateLbl ~= nil and historyRateLbl.setText ~= nil then
-        local rateColor = colors.yellow
-        local rateText = "Eff: +0.0 FE/t"
-        if effectiveRate < 0 then
-            rateColor = colors.red
-            rateText = "Eff: -" .. _G.numberToEnergyUnit(math.abs(effectiveRate)) .. "/t"
-        elseif effectiveRate > 0 then
-            rateColor = colors.lime
-            rateText = "Eff: +" .. _G.numberToEnergyUnit(effectiveRate) .. "/t"
-        end
+        local rateLeft = 2 + inOutWidth + gap
+        local rateMaxRight = math.floor(headerWidth * 0.7)
+        local rateLabelWidth = math.max(1, math.min(rateWidth, math.max(1, rateMaxRight - rateLeft)))
         historyRateLbl:setText(rateText)
+        historyRateLbl:setSize(rateLabelWidth, 1)
+        historyRateLbl:setPosition(rateLeft, 2)
+        historyRateLbl:setTextAlign("left")
         historyRateLbl:setForeground(rateColor)
     end
 
     if historyEtaLbl ~= nil and historyEtaLbl.setText ~= nil then
-        historyEtaLbl:setText("ETA: " .. getEtaText())
+        local etaRight = math.max(2, headerWidth - 1)
+        local etaLeft = math.max(2, etaRight - etaWidth + 1)
+        local etaLabelWidth = math.max(1, etaRight - etaLeft + 1)
+        historyEtaLbl:setText(etaText)
+        historyEtaLbl:setSize(etaLabelWidth, 1)
+        historyEtaLbl:setPosition(etaLeft, 2)
+        historyEtaLbl:setTextAlign("left")
+        historyEtaLbl:setForeground(colors.white)
     end
 
     local scaleMin, scaleMax = computeHistoryScale(historyData)
