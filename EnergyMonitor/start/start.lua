@@ -89,7 +89,7 @@ local function parseSemverTag(tag)
 	return {
 		raw = tag,
 		core = parts,
-		prerelease = prerelease ~= nil and prerelease:sub(2) or nil
+		prerelease = prerelease
 	}
 end
 
@@ -304,7 +304,7 @@ function _G.compareRepositoryTags(leftTag, rightTag)
 end
 
 local function downloadInstallerCompat()
-	local compatUrl = _G.repoUrl .. _G.installerCompatRef .. "/EnergyMonitor/"
+	local compatUrl = _G.repoUrl .. string.gsub(_G.installerCompatRef, "^v", "") .. "/EnergyMonitor/"
 	local gotUrl = http.get(compatUrl .. "install/installer.lua")
 	if gotUrl == nil then
 		error("Could not download compatibility installer from " .. _G.installerCompatRef)
