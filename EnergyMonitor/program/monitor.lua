@@ -234,12 +234,12 @@ listen = function()
             hideServerNotice()
             
             local clock = os.clock()
+            term.redirect(term.native())
+            term.clear()
+            term.setCursorPos(1,1)
+            print("Receiving monitor data from server on channel: ".._G.modemChannel)
             if debugPrint then
-                term.redirect(term.native())
-                term.clear()
-                term.setCursorPos(1,1)
                 print(clock)
-                print("Receiving monitor data from server on channel: ".._G.modemChannel)
             end
 
             -- extract data from message
@@ -1316,8 +1316,6 @@ end
 ----------------------------------------
 -- ACTUAL MONITOR PROGRAM STARTS HERE --
 ----------------------------------------
-print("THIS IS THE MONITOR PROGRAM!")
-
 -- Run the pinger and the listener and monitor updaters in parallel
 parallel.waitForAll(setupMonitor, listen, updateMonitorValues, updateRuntimeFooter, updateHistoryGraph)
 
