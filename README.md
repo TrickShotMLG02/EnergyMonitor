@@ -29,14 +29,14 @@ The default install command fetches the latest stable tag. To install a beta or 
 
 ```sh
 git beta
-git 1.7.4
-git 1.7.4.1
-git 2
-git 2.3
-git 2.3.0.0
-git 1.7.4-beta
-git 1.7.4.1-beta
-git 2.3-beta
+git v1.7.4
+git v1.7.4.1
+git v2
+git v2.3
+git v2.3.0.0
+git v1.7.4-beta
+git v1.7.4.1-beta
+git v2.3-beta
 ```
 
 The installer will ask for:
