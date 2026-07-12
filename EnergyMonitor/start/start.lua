@@ -42,6 +42,9 @@ local function stripVersionPrefix(tag)
 	end
 
 	tag = tostring(tag):gsub("^%s+", ""):gsub("%s+$", "")
+	if (tag:sub(1, 1) == '"' and tag:sub(-1) == '"') or (tag:sub(1, 1) == "'" and tag:sub(-1) == "'") then
+		tag = tag:sub(2, -2)
+	end
 	if tag:sub(1, 1) == "v" or tag:sub(1, 1) == "V" then
 		return tag:sub(2)
 	end
