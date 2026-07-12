@@ -125,6 +125,19 @@ local function parseSemverTag(tag)
 	}
 end
 
+local compareParsedTags
+
+local function shouldUseCompatInstaller(versionTag)
+	local target = parseSemverTag(versionTag)
+	local compat = parseSemverTag(installerCompatRef)
+
+	if target == nil or compat == nil then
+		return true
+	end
+
+	return compareParsedTags(target, compat) < 0
+end
+
 local function splitIdentifiers(value)
 	local parts = {}
 	if value == nil or value == "" then
@@ -166,7 +179,7 @@ local function compareIdentifiers(left, right)
 	return 0
 end
 
-local function compareParsedTags(left, right)
+compareParsedTags = function(left, right)
 	local maxCount = math.max(#left.core, #right.core)
 	for i = 1, maxCount do
 		local leftPart = left.core[i] or 0
@@ -329,12 +342,17 @@ local function setRelUrl(ref)
 	return repoUrl .. ref .. "/EnergyMonitor/"
 end
 
-local function downloadInstallerCompat()
-	local compatUrl = setRelUrl(installerCompatRef)
+local function downloadInstaller(versionRef)
+	local installerRef = versionRef
+	if shouldUseCompatInstaller(versionRef) then
+		installerRef = installerCompatRef
+	end
+
+	local compatUrl = setRelUrl(installerRef)
 	local installerPath = "/EnergyMonitor/install/installer.lua"
 	local gotUrl = http.get(compatUrl .. "install/installer.lua")
 	if gotUrl == nil then
-		error("Could not download compatibility installer from " .. installerCompatRef)
+		error("Could not download installer from " .. installerRef)
 	end
 
 	local file = fs.open(installerPath, "w")
@@ -425,7 +443,7 @@ function install(versionRef)
 	relUrl = setRelUrl(versionRef)
 
 	--Downloads the installer
-	downloadInstallerCompat()
+	downloadInstaller(versionRef)
 
 	--execute installer
 	shell.run("/EnergyMonitor/install/installer.lua install " .. versionRef .. " " .. installLang)
