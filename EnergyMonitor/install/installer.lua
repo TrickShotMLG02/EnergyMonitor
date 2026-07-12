@@ -338,11 +338,18 @@ function configureInstall()
     print("Configuration summary")
     print()
     print("Role: "..config.program)
-    print("Peripheral type: "..config.peripheralType)
-    print("Transfer type: "..config.transferType)
     print("Modem channel/port: "..config.modemChannel)
-    print("History window (minutes): "..config.historyMinutes)
-    print("Open graph on start: "..tostring(config.monitorOpenGraphOnStart))
+
+    if config.peripheralType == "transfer" then
+     print("Peripheral type: "..config.peripheralType)
+     print("Transfer type: "..config.transferType)
+    end
+
+    if config.program == "monitor" then
+      print("History window (minutes): "..config.historyMinutes)
+      print("Open graph on start: "..tostring(config.monitorOpenGraphOnStart))
+    end
+
     print()
 
     if promptYesNoInline("Use these settings?") then
