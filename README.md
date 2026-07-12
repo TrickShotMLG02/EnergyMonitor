@@ -29,14 +29,14 @@ The default install command fetches the latest stable tag. To install a beta or 
 
 ```sh
 git beta
-git 1.7.4
-git 1.7.4.1
-git 2
-git 2.3
-git 2.3.0.0
-git 1.7.4-beta
-git 1.7.4.1-beta
-git 2.3-beta
+git v1.7.4
+git v1.7.4.1
+git v2
+git v2.3
+git v2.3.0.0
+git v1.7.4-beta
+git v1.7.4.1-beta
+git v2.3-beta
 ```
 
 The installer will ask for:
@@ -47,6 +47,7 @@ The installer will ask for:
 - Transfer direction, when installing a transfer client
 - Modem channel/port
 - Stored energy history window in minutes
+- History save interval in seconds
 - Computer label
 - Startup installation
 
@@ -157,6 +158,7 @@ Important options:
 - `transferType`: `input`, `output`, `both`, or `n/a`
 - `modemChannel`: modem channel/port used by this EnergyMonitor network
 - `historyMinutes`: stored-energy history window shown on the monitor, from 1 to 120 minutes
+- `historySaveInterval`: how often the monitor saves the current history window, in seconds
 - `monitorOpenGraphOnStart`: open the graph view immediately when a monitor starts
 - `debug`: set to `1` for debug output
 

@@ -37,7 +37,7 @@ else
 end
 
 --Url for file downloads
-local relUrl = repoUrl..versionRef.."/EnergyMonitor/"
+local relUrl = repoUrl..(versionRef:gsub("^v", "")).."/EnergyMonitor/"
 
 --===== Functions =====
 
@@ -165,6 +165,105 @@ function updateOptionFile(option, value)
     local fileSave = fs.open("/EnergyMonitor/config/options.txt","w")
     fileSave.writeLine(optList)
     fileSave.close()
+end
+
+local ensureDirectory
+
+local function backupDataDirectory()
+  local dataDir = "/EnergyMonitor/data"
+  local backupDir = "/EnergyMonitor_data_backup"
+
+  if not fs.exists(dataDir) then
+    return nil
+  end
+
+  if fs.exists(backupDir) then
+    fs.delete(backupDir)
+  end
+
+  local function copyTree(sourceDir, targetDir)
+    if not fs.exists(sourceDir) then
+      return
+    end
+
+    ensureDirectory(targetDir)
+
+    local entries = fs.list(sourceDir)
+    for _, entry in ipairs(entries) do
+      local sourcePath = sourceDir .. "/" .. entry
+      local targetPath = targetDir .. "/" .. entry
+
+      if fs.isDir(sourcePath) then
+        copyTree(sourcePath, targetPath)
+      else
+        local sourceFile = fs.open(sourcePath, "r")
+        if sourceFile ~= nil then
+          local targetFile = fs.open(targetPath, "w")
+          if targetFile ~= nil then
+            targetFile.write(sourceFile.readAll())
+            targetFile.close()
+          end
+          sourceFile.close()
+        end
+      end
+    end
+  end
+
+  copyTree(dataDir, backupDir)
+  if fs.exists(backupDir) then
+    return backupDir
+  end
+
+  return nil
+end
+
+ensureDirectory = function(path)
+  if path == nil or path == "" then
+    return
+  end
+
+  if fs.exists(path) then
+    return
+  end
+
+  fs.makeDir(path)
+end
+
+local function restoreDirectoryContents(sourceDir, targetDir)
+  if sourceDir == nil or targetDir == nil or not fs.exists(sourceDir) then
+    return
+  end
+
+  ensureDirectory(targetDir)
+
+  local entries = fs.list(sourceDir)
+  for _, entry in ipairs(entries) do
+    local sourcePath = sourceDir .. "/" .. entry
+    local targetPath = targetDir .. "/" .. entry
+
+    if fs.isDir(sourcePath) then
+      restoreDirectoryContents(sourcePath, targetPath)
+    else
+      local sourceFile = fs.open(sourcePath, "r")
+      if sourceFile ~= nil then
+        local targetFile = fs.open(targetPath, "w")
+        if targetFile ~= nil then
+          targetFile.write(sourceFile.readAll())
+          targetFile.close()
+        end
+        sourceFile.close()
+      end
+    end
+  end
+end
+
+local function restoreDataDirectory(backupDir)
+  if backupDir == nil or not fs.exists(backupDir) then
+    return
+  end
+
+  restoreDirectoryContents(backupDir, "/EnergyMonitor/data")
+  pcall(fs.delete, backupDir)
 end
 
 function downloadAndRead(fileName)
@@ -302,6 +401,7 @@ function configureInstall()
       transferType = "n/a",
       modemChannel = 5,
       historyMinutes = 5,
+      historySaveInterval = 15,
       monitorOpenGraphOnStart = false
     }
 
@@ -330,6 +430,7 @@ function configureInstall()
 
     if config.program == "monitor" then
       config.historyMinutes = promptNumber("Set the stored energy history window in minutes", 5, 1, 120)
+      config.historySaveInterval = promptNumber("Set the history save interval in seconds", 15, 5, 3600)
       config.monitorOpenGraphOnStart = promptYesNoInline("Open the graph view when this monitor starts?")
     end
 
@@ -338,11 +439,19 @@ function configureInstall()
     print("Configuration summary")
     print()
     print("Role: "..config.program)
-    print("Peripheral type: "..config.peripheralType)
-    print("Transfer type: "..config.transferType)
     print("Modem channel/port: "..config.modemChannel)
-    print("History window (minutes): "..config.historyMinutes)
-    print("Open graph on start: "..tostring(config.monitorOpenGraphOnStart))
+
+    if config.peripheralType == "transfer" then
+     print("Peripheral type: "..config.peripheralType)
+     print("Transfer type: "..config.transferType)
+    end
+
+    if config.program == "monitor" then
+      print("History window (minutes): "..config.historyMinutes)
+      print("History save interval (seconds): "..config.historySaveInterval)
+      print("Open graph on start: "..tostring(config.monitorOpenGraphOnStart))
+    end
+
     print()
 
     if promptYesNoInline("Use these settings?") then
@@ -430,9 +539,11 @@ term.setCursorPos(1,1)
 print(selectedLang:getText("installerFileCheck"))
 
 local oldConfig = {}
+local dataBackupDir = nil
 if update then
   -- BACKUP CONFIG FILE IN LOCAL TABLE
   oldConfig = readConfigFile()
+  dataBackupDir = backupDataDirectory()
 end
 
 
@@ -450,6 +561,7 @@ term.setCursorPos(1,1)
 if update then
   -- write back updated config file
   updateConfigFile(oldConfig)
+  restoreDataDirectory(dataBackupDir)
 end
 
 
@@ -474,6 +586,7 @@ if not update then
   updateOptionFile("peripheralType", installConfig.peripheralType)
   updateOptionFile("modemChannel", installConfig.modemChannel)
   updateOptionFile("historyMinutes", installConfig.historyMinutes)
+  updateOptionFile("historySaveInterval", installConfig.historySaveInterval)
   updateOptionFile("monitorOpenGraphOnStart", installConfig.monitorOpenGraphOnStart)
 end
 

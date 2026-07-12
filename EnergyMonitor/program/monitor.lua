@@ -26,10 +26,15 @@ local lastUpdateCheck = -60
 local noticeBlinkState = false
 local historyMinutes = math.max(1, math.min(120, tonumber(_G.historyMinutes) or 5))
 local historySampleSeconds = math.max(1, historyMinutes * 60)
+local historySaveInterval = math.max(5, tonumber(_G.historySaveInterval) or 15)
+local historyDataFile = "/EnergyMonitor/data/history.txt"
+local historyDataTempFile = "/EnergyMonitor/data/history.tmp"
 local historyScalePadding = 0.1
 local historyMode = false
 local historyData = {}
 local historyHasServerData = false
+local historyPersistDirty = false
+local historyLastSaveAt = 0
 
 local displayFilter = {
     showDisconnected = true,
@@ -185,10 +190,14 @@ local updateMonitorValues
 local updateRuntimeFooter
 local updateHistoryOverlay
 local computeHistoryScale
+local getHistoryNow
 local getEtaText
 local setMonitorMode
 local pruneHistoryData
 local sampleHistoryPoint
+local loadHistoryData
+local saveHistoryData
+local maybeSaveHistoryData
 local drawHistoryPlot
 local safeHistoryDraw
 local showServerNotice
@@ -271,7 +280,7 @@ listen = function()
 end
 
 checkMonitorUpdates = function()
-    local now = os.clock()
+    local now = getHistoryNow()
     if now - lastUpdateCheck < 60 then
         return
     end
@@ -364,20 +373,134 @@ getEtaText = function()
     return "inf"
 end
 
+getHistoryNow = function()
+    if os.epoch ~= nil then
+        return os.epoch("utc") / 1000
+    end
+
+    return os.clock()
+end
+
+local function normalizeHistoryPoints(points)
+    local normalized = {}
+
+    for _, point in ipairs(points or {}) do
+        local timeValue = tonumber(point.time)
+        local storedValue = tonumber(point.value)
+        if timeValue ~= nil and storedValue ~= nil and timeValue == timeValue and storedValue == storedValue then
+            table.insert(normalized, {
+                time = timeValue,
+                value = math.max(0, storedValue)
+            })
+        end
+    end
+
+    table.sort(normalized, function(left, right)
+        return left.time < right.time
+    end)
+
+    return normalized
+end
+
+loadHistoryData = function()
+    historyData = {}
+    historyPersistDirty = false
+    historyLastSaveAt = 0
+
+    if not fs.exists(historyDataFile) then
+        return
+    end
+
+    local file = fs.open(historyDataFile, "r")
+    if file == nil then
+        return
+    end
+
+    local ok, decoded = pcall(textutils.unserialise, file.readAll())
+    file.close()
+    if not ok or decoded == nil then
+        return
+    end
+
+    local points = decoded
+    if type(decoded) == "table" and type(decoded.points) == "table" then
+        points = decoded.points
+    end
+
+    historyData = normalizeHistoryPoints(points)
+    pruneHistoryData()
+end
+
+saveHistoryData = function()
+    if historyDataFile == nil then
+        return false
+    end
+
+    local dir = fs.getDir(historyDataFile)
+    if dir ~= nil and dir ~= "" and not fs.exists(dir) then
+        fs.makeDir(dir)
+    end
+
+    local payload = {
+        version = 1,
+        savedAt = getHistoryNow(),
+        historyMinutes = historyMinutes,
+        points = historyData
+    }
+
+    local tempFile = fs.open(historyDataTempFile, "w")
+    if tempFile == nil then
+        return false
+    end
+
+    tempFile.write(textutils.serialise(payload))
+    tempFile.close()
+
+    if fs.exists(historyDataFile) then
+        pcall(fs.delete, historyDataFile)
+    end
+
+    local movedOk, movedResult = pcall(fs.move, historyDataTempFile, historyDataFile)
+    if not movedOk or movedResult == false then
+        return false
+    end
+
+    historyPersistDirty = false
+    historyLastSaveAt = getHistoryNow()
+    return true
+end
+
+maybeSaveHistoryData = function()
+    if not historyPersistDirty then
+        return
+    end
+
+    local now = getHistoryNow()
+    if historyLastSaveAt == nil or now - historyLastSaveAt >= historySaveInterval then
+        saveHistoryData()
+    end
+end
+
 pruneHistoryData = function()
-    local cutoff = os.clock() - historySampleSeconds
+    local cutoff = getHistoryNow() - historySampleSeconds
     local pruned = {}
+    local changed = false
 
     for _, point in ipairs(historyData) do
         if point.time >= cutoff then
             table.insert(pruned, point)
+        else
+            changed = true
         end
     end
 
     historyData = pruned
+    if changed then
+        historyPersistDirty = true
+    end
 end
 
-computeHistoryScale = function(points)
+computeHistoryScale = function(points, capacity)
     local minValue = nil
     local maxValue = nil
 
@@ -404,6 +527,11 @@ computeHistoryScale = function(points)
     minValue = math.max(0, minValue - padding)
     maxValue = maxValue + padding
 
+    local capacityValue = tonumber(capacity)
+    if capacityValue ~= nil and capacityValue == capacityValue and capacityValue > 0 then
+        maxValue = math.min(maxValue, capacityValue)
+    end
+
     if minValue ~= minValue or maxValue ~= maxValue then
         return 0, 1
     end
@@ -420,7 +548,7 @@ sampleHistoryPoint = function()
         return
     end
 
-    local now = os.clock()
+    local now = getHistoryNow()
     if #historyData > 0 and now - historyData[#historyData].time < 1 then
         return
     end
@@ -429,6 +557,7 @@ sampleHistoryPoint = function()
         time = now,
         value = math.max(0, tonumber(storedEnergy) or 0)
     })
+    historyPersistDirty = true
     pruneHistoryData()
 end
 
@@ -473,7 +602,7 @@ drawHistoryPlot = function()
         return
     end
 
-    local now = os.clock()
+    local now = getHistoryNow()
     local cutoff = now - historySampleSeconds
     local points = {}
 
@@ -516,7 +645,7 @@ drawHistoryPlot = function()
         return
     end
 
-    local scaleMin, scaleMax = computeHistoryScale(points)
+    local scaleMin, scaleMax = computeHistoryScale(points, maxEnergy)
     local scaleRange = math.max(1, scaleMax - scaleMin)
     local plotLeft = 2
     local plotTop = 2
@@ -681,7 +810,7 @@ updateHistoryOverlay = function()
         historyEtaLbl:setForeground(colors.white)
     end
 
-    local scaleMin, scaleMax = computeHistoryScale(historyData)
+    local scaleMin, scaleMax = computeHistoryScale(historyData, maxEnergy)
     local midValue = scaleMin + ((scaleMax - scaleMin) / 2)
     local minText = _G.numberToEnergyUnit(scaleMin)
     local midText = _G.numberToEnergyUnit(midValue)
@@ -1045,6 +1174,7 @@ end
 updateHistoryGraph = function()
     while true do
         sampleHistoryPoint()
+        maybeSaveHistoryData()
         updateHistoryOverlay()
         if historyMode and historyPlot ~= nil and historyPlot.updateDraw ~= nil then
             historyPlot:updateDraw()
@@ -1316,6 +1446,7 @@ end
 ----------------------------------------
 -- ACTUAL MONITOR PROGRAM STARTS HERE --
 ----------------------------------------
+loadHistoryData()
 -- Run the pinger and the listener and monitor updaters in parallel
 parallel.waitForAll(setupMonitor, listen, updateMonitorValues, updateRuntimeFooter, updateHistoryGraph)
 

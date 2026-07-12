@@ -14,6 +14,7 @@ _G.meterType = 0
 _G.modemChannel = 0
 _G.pingInterval = 0.5
 _G.historyMinutes = 5
+_G.historySaveInterval = 15
 _G.monitorOpenGraphOnStart = false
 _G.autoUpdate = 1
 _G.debugEnabled = 1
@@ -89,7 +90,7 @@ local function parseSemverTag(tag)
 	return {
 		raw = tag,
 		core = parts,
-		prerelease = prerelease ~= nil and prerelease:sub(2) or nil
+		prerelease = prerelease
 	}
 end
 
@@ -175,6 +176,17 @@ local function compareParsedTags(left, right)
 	end
 
 	return 0
+end
+
+local function shouldUseCompatInstaller(versionTag)
+	local target = parseSemverTag(versionTag)
+	local compat = parseSemverTag(_G.installerCompatRef)
+
+	if target == nil or compat == nil then
+		return true
+	end
+
+	return compareParsedTags(target, compat) < 0
 end
 
 local function requestJson(url)
@@ -303,11 +315,16 @@ function _G.compareRepositoryTags(leftTag, rightTag)
 	return compareParsedTags(left, right)
 end
 
-local function downloadInstallerCompat()
-	local compatUrl = _G.repoUrl .. _G.installerCompatRef .. "/EnergyMonitor/"
+local function downloadInstaller(versionRef)
+	local installerRef = versionRef
+	if shouldUseCompatInstaller(versionRef) then
+		installerRef = _G.installerCompatRef
+	end
+
+	local compatUrl = _G.repoUrl .. string.gsub(installerRef, "^v", "") .. "/EnergyMonitor/"
 	local gotUrl = http.get(compatUrl .. "install/installer.lua")
 	if gotUrl == nil then
-		error("Could not download compatibility installer from " .. _G.installerCompatRef)
+		error("Could not download installer from " .. installerRef)
 	end
 
 	local file = fs.open("/EnergyMonitor/install/installer.lua", "w")
@@ -342,6 +359,7 @@ function _G.loadOptionFile()
 	_G.modemChannel = optionList["modemChannel"]
 	_G.pingInterval = optionList["pingInterval"]
 	_G.historyMinutes = optionList["historyMinutes"]
+	_G.historySaveInterval = optionList["historySaveInterval"]
 	_G.monitorOpenGraphOnStart = optionList["monitorOpenGraphOnStart"]
 	_G.autoUpdate = optionList["autoUpdate"]
 	_G.debugEnabled = optionList["debug"]
@@ -350,6 +368,10 @@ function _G.loadOptionFile()
 		_G.historyMinutes = 5
 	end
 	_G.historyMinutes = math.max(1, math.min(120, tonumber(_G.historyMinutes) or 5))
+	if _G.historySaveInterval == nil then
+		_G.historySaveInterval = 15
+	end
+	_G.historySaveInterval = math.max(5, math.min(3600, tonumber(_G.historySaveInterval) or 15))
 	if _G.monitorOpenGraphOnStart == nil then
 		_G.monitorOpenGraphOnStart = false
 	end
@@ -372,6 +394,8 @@ function _G.refreshOptionList()
 	optionList["pingInterval"] = pingInterval
 	debugOutput("Variable: historyMinutes")
 	optionList["historyMinutes"] = historyMinutes
+	debugOutput("Variable: historySaveInterval")
+	optionList["historySaveInterval"] = historySaveInterval
 	debugOutput("Variable: monitorOpenGraphOnStart")
 	optionList["monitorOpenGraphOnStart"] = monitorOpenGraphOnStart
 	optionList["debug"] = debug
@@ -478,7 +502,7 @@ end
 
 function _G.doUpdate(toVer)
 	if autoUpdate == 1 then
-		downloadInstallerCompat()
+		downloadInstaller(toVer)
 		_G.showMonitorNotice(_G.language:getText("autoUpdateLineOne"), {
 			toVer,
 			_G.language:getText("autoUpdateLineTwo"),
@@ -529,7 +553,7 @@ function _G.doUpdate(toVer)
             if event == "key" then
 
                 if p1 == 90 or p1 == 98 then
-                    downloadInstallerCompat()
+                    downloadInstaller(toVer)
                     shell.run("/EnergyMonitor/install/installer.lua update "..toVer)
                     out = true
 					os.reboot()
