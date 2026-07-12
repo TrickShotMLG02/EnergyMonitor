@@ -327,8 +327,9 @@ function configureInstall()
     end
 
     config.modemChannel = promptNumber("Set the modem channel/port used by this EnergyMonitor network", 5, 0, 65535)
-    config.historyMinutes = promptNumber("Set the stored energy history window in minutes", 5, 1, 120)
+
     if config.program == "monitor" then
+      config.historyMinutes = promptNumber("Set the stored energy history window in minutes", 5, 1, 120)
       config.monitorOpenGraphOnStart = promptYesNoInline("Open the graph view when this monitor starts?")
     end
 
