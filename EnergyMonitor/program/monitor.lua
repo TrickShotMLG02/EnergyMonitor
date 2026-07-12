@@ -100,7 +100,9 @@ local historyView = {}
 local historyHeader = {}
 local historyExitBtn = {}
 local historyTitleLbl = {}
-local historyDebugLbl = {}
+local historyInOutLbl = {}
+local historyRateLbl = {}
+local historyEtaLbl = {}
 local historyPlot = {}
 local historyAxisPanel = {}
 local historyAxisMaxLbl = {}
@@ -182,6 +184,7 @@ local updateMonitorValues
 local updateRuntimeFooter
 local updateHistoryOverlay
 local computeHistoryScale
+local getEtaText
 local setMonitorMode
 local pruneHistoryData
 local sampleHistoryPoint
@@ -346,6 +349,18 @@ updateRuntimeFooterLabel = function()
         timeLbl:setPosition(1, versionFooterHeight)
         timeLbl:setTextAlign("left")
     end
+end
+
+getEtaText = function()
+    if effectiveRate < 0 then
+        local eta = storedEnergy / effectiveRate
+        return _G.convertTicksToTime(-eta)
+    elseif effectiveRate > 0 then
+        local eta = (maxEnergy - storedEnergy) / effectiveRate
+        return _G.convertTicksToTime(eta)
+    end
+
+    return "inf"
 end
 
 pruneHistoryData = function()
@@ -602,15 +617,33 @@ end
 
 updateHistoryOverlay = function()
     if historyTitleLbl ~= nil and historyTitleLbl.setText ~= nil then
-        historyTitleLbl:setText("Stored energy history (last " .. historyMinutes .. "m)")
+        historyTitleLbl:setText("Stored Energy History (last " .. historyMinutes .. "m)")
     end
 
     if historyExitBtn ~= nil and historyExitBtn.setText ~= nil then
         historyExitBtn:setText("Back")
     end
 
-    if historyDebugLbl ~= nil and historyDebugLbl.setText ~= nil then
-        historyDebugLbl:setText("")
+    if historyInOutLbl ~= nil and historyInOutLbl.setText ~= nil then
+        historyInOutLbl:setText("In: " .. _G.numberToEnergyUnit(inputRate) .. "/t  Out: " .. _G.numberToEnergyUnit(outputRate) .. "/t")
+    end
+
+    if historyRateLbl ~= nil and historyRateLbl.setText ~= nil then
+        local rateColor = colors.yellow
+        local rateText = "Eff: +0.0 FE/t"
+        if effectiveRate < 0 then
+            rateColor = colors.red
+            rateText = "Eff: -" .. _G.numberToEnergyUnit(math.abs(effectiveRate)) .. "/t"
+        elseif effectiveRate > 0 then
+            rateColor = colors.lime
+            rateText = "Eff: +" .. _G.numberToEnergyUnit(effectiveRate) .. "/t"
+        end
+        historyRateLbl:setText(rateText)
+        historyRateLbl:setForeground(rateColor)
+    end
+
+    if historyEtaLbl ~= nil and historyEtaLbl.setText ~= nil then
+        historyEtaLbl:setText("ETA: " .. getEtaText())
     end
 
     local scaleMin, scaleMax = computeHistoryScale(historyData)
@@ -669,23 +702,35 @@ setupMonitor = function()
         :setSize("parent.w", 3)
         :setPosition(1, 1)
     historyTitleLbl = historyHeader:addLabel()
-        :setText("Stored energy history (last " .. historyMinutes .. "m)")
+        :setText("Stored Energy History (last " .. historyMinutes .. "m)")
         :setFontSize(1)
         :setSize("parent.w-14", 1)
         :setPosition(1, 1)
         :setTextAlign("left")
         :setForeground(colors.lime)
-    historyDebugLbl = historyHeader:addLabel()
+    historyInOutLbl = historyHeader:addLabel()
         :setText("")
-        :setSize("parent.w-14", 1)
+        :setSize("parent.w / 2", 1)
         :setPosition(1, 2)
         :setTextAlign("left")
-        :setForeground(colors.gray)
-    historyExitBtn = historyHeader:addButton()
+        :setForeground(colors.white)
+    historyRateLbl = historyHeader:addLabel()
+        :setText("")
+        :setSize("parent.w / 4", 1)
+        :setPosition("parent.w / 2 - (parent.w / 8)", 2)
+        :setTextAlign("center")
+        :setForeground(colors.yellow)
+    historyEtaLbl = historyHeader:addLabel()
+        :setText("")
+        :setSize("parent.w / 4", 1)
+        :setPosition("parent.w - (parent.w / 4) - 1", 2)
+        :setTextAlign("right")
+        :setForeground(colors.white)
+    historyExitBtn = historyView:addButton()
         :setText("Back")
         :setSize(8, 1)
         :setBackground(btnDefaultColor)
-        :setPosition("parent.w-9", 1)
+        :setPosition("parent.w-9", "parent.h-1")
     historyExitBtn:onClick(basalt.schedule(function(self)
         animateButtonClick(self)
         pcall(setMonitorMode, "default")
@@ -719,7 +764,7 @@ setupMonitor = function()
     historyTimeLbl = historyView:addLabel()
         :setText("Time")
         :setSize("parent.w-18", 1)
-        :setPosition(2, "parent.h-1")
+        :setPosition(2, "parent.h-3")
         :setTextAlign("center")
         :setForeground(colors.gray)
     historyPlot:addPostDraw("history-plot", function()
@@ -861,22 +906,7 @@ updateTransferDisplay = function()
 
 
 
-    -- calculate estimated time until full/empty
-    local eta = 0
-    
-    if effectiveRate < 0 then
-        -- time until empty
-        eta = storedEnergy / effectiveRate
-        etaLbl:setText("ETA: " .. _G.convertTicksToTime(-eta))
-    elseif effectiveRate > 0 then
-        -- time until full
-        eta = (maxEnergy - storedEnergy) / effectiveRate
-        etaLbl:setText("ETA: " .. _G.convertTicksToTime(eta))
-    else
-        -- time should be "inf"
-        eta = -1
-        etaLbl:setText("ETA: inf")
-    end
+    etaLbl:setText("ETA: " .. getEtaText())
 end
 
 -- function to update all display cells (transferrers) with their new current values
