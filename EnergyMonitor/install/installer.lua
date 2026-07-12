@@ -301,7 +301,8 @@ function configureInstall()
       peripheralType = "n/a",
       transferType = "n/a",
       modemChannel = 5,
-      historyMinutes = 5
+      historyMinutes = 5,
+      monitorOpenGraphOnStart = false
     }
 
     config.program = promptChoice("Select this computer's role", {
@@ -327,6 +328,9 @@ function configureInstall()
 
     config.modemChannel = promptNumber("Set the modem channel/port used by this EnergyMonitor network", 5, 0, 65535)
     config.historyMinutes = promptNumber("Set the stored energy history window in minutes", 5, 1, 120)
+    if config.program == "monitor" then
+      config.monitorOpenGraphOnStart = promptYesNoInline("Open the graph view when this monitor starts?")
+    end
 
     term.clear()
     term.setCursorPos(1,1)
@@ -337,6 +341,7 @@ function configureInstall()
     print("Transfer type: "..config.transferType)
     print("Modem channel/port: "..config.modemChannel)
     print("History window (minutes): "..config.historyMinutes)
+    print("Open graph on start: "..tostring(config.monitorOpenGraphOnStart))
     print()
 
     if promptYesNoInline("Use these settings?") then
@@ -468,6 +473,7 @@ if not update then
   updateOptionFile("peripheralType", installConfig.peripheralType)
   updateOptionFile("modemChannel", installConfig.modemChannel)
   updateOptionFile("historyMinutes", installConfig.historyMinutes)
+  updateOptionFile("monitorOpenGraphOnStart", installConfig.monitorOpenGraphOnStart)
 end
 
 updateOptionFile("version", getVersion())

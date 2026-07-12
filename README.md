@@ -157,6 +157,7 @@ Important options:
 - `transferType`: `input`, `output`, `both`, or `n/a`
 - `modemChannel`: modem channel/port used by this EnergyMonitor network
 - `historyMinutes`: stored-energy history window shown on the monitor, from 1 to 120 minutes
+- `monitorOpenGraphOnStart`: open the graph view immediately when a monitor starts
 - `debug`: set to `1` for debug output
 
 ## Troubleshooting
