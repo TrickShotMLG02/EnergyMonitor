@@ -75,7 +75,7 @@ function _G.numberToEnergyUnit(number)
   -- turn 1000000000 into 1GFE
   -- turn 1000000000000 into 1TFE
 
-  local decimal_places = 1
+  number = tonumber(number) or 0
 
   local unit = "FE"
   local value = 0

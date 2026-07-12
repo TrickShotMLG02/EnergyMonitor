@@ -105,8 +105,7 @@ local historyAxisPanel = {}
 local historyAxisMaxLbl = {}
 local historyAxisMidLbl = {}
 local historyAxisMinLbl = {}
-local historyAxisTimeLbl = {}
-local historyAxisInfoLbl = {}
+local historyTimeLbl = {}
 
 -- create main window
 local main = basalt.addMonitor()
@@ -378,10 +377,18 @@ computeHistoryScale = function(points)
         return 0, 1
     end
 
+    if minValue ~= minValue or maxValue ~= maxValue then
+        return 0, 1
+    end
+
     local range = maxValue - minValue
     local padding = math.max(range * historyScalePadding, math.max(1, math.abs(maxValue) * 0.05))
-    minValue = minValue - padding
+    minValue = math.max(0, minValue - padding)
     maxValue = maxValue + padding
+
+    if minValue ~= minValue or maxValue ~= maxValue then
+        return 0, 1
+    end
 
     if maxValue <= minValue then
         maxValue = minValue + 1
@@ -603,10 +610,15 @@ updateHistoryOverlay = function()
             local w, h = historyPlot:getSize()
             plotSize = tostring(w) .. "x" .. tostring(h)
         end
-        if debugUI then
-            historyDebugLbl:setText("plot " .. plotSize .. " points " .. tostring(pointCount))
+        if pointCount > 0 then
+            local firstPoint = historyData[1]
+            historyDebugLbl:setText(
+                "plot " .. plotSize ..
+                " points " .. tostring(pointCount) ..
+                " first " .. _G.numberToEnergyUnit(tonumber(firstPoint and firstPoint.value) or 0)
+            )
         else
-            historyDebugLbl:setText("")
+            historyDebugLbl:setText("plot " .. plotSize .. " points 0 first n/a")
         end
     end
 
@@ -624,11 +636,8 @@ updateHistoryOverlay = function()
     if historyAxisMinLbl ~= nil and historyAxisMinLbl.setText ~= nil then
         historyAxisMinLbl:setText("Min " .. minText)
     end
-    if historyAxisTimeLbl ~= nil and historyAxisTimeLbl.setText ~= nil then
-        historyAxisTimeLbl:setText("Time " .. historyMinutes .. "m")
-    end
-    if historyAxisInfoLbl ~= nil and historyAxisInfoLbl.setText ~= nil then
-        historyAxisInfoLbl:setText("Auto")
+    if historyTimeLbl ~= nil and historyTimeLbl.setText ~= nil then
+        historyTimeLbl:setText("Time " .. historyMinutes .. "m")
     end
 end
 
@@ -713,20 +722,14 @@ setupMonitor = function()
     historyAxisMinLbl = historyAxisPanel:addLabel()
         :setText("Min")
         :setSize("parent.w", 1)
-        :setPosition(1, "parent.h-2")
-        :setTextAlign("right")
-        :setForeground(colors.white)
-    historyAxisTimeLbl = historyAxisPanel:addLabel()
-        :setText("Time")
-        :setSize("parent.w", 1)
-        :setPosition(1, "parent.h")
-        :setTextAlign("right")
-        :setForeground(colors.gray)
-    historyAxisInfoLbl = historyAxisPanel:addLabel()
-        :setText("Zoom")
-        :setSize("parent.w", 1)
         :setPosition(1, "parent.h-1")
         :setTextAlign("right")
+        :setForeground(colors.white)
+    historyTimeLbl = historyView:addLabel()
+        :setText("Time")
+        :setSize("parent.w", 1)
+        :setPosition(1, "parent.h-2")
+        :setTextAlign("center")
         :setForeground(colors.gray)
     historyPlot:addPostDraw("history-plot", function()
         safeHistoryDraw()
