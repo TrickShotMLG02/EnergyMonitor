@@ -13,6 +13,7 @@ _G.lang = ""
 _G.meterType = 0
 _G.modemChannel = 0
 _G.pingInterval = 0.5
+_G.historyMinutes = 5
 _G.autoUpdate = 1
 _G.debugEnabled = 1
 _G.language = {}
@@ -339,8 +340,14 @@ function _G.loadOptionFile()
 	_G.transferType = optionList["transferType"]
 	_G.modemChannel = optionList["modemChannel"]
 	_G.pingInterval = optionList["pingInterval"]
+	_G.historyMinutes = optionList["historyMinutes"]
 	_G.autoUpdate = optionList["autoUpdate"]
 	_G.debugEnabled = optionList["debug"]
+
+	if _G.historyMinutes == nil then
+		_G.historyMinutes = 5
+	end
+	_G.historyMinutes = math.max(1, math.min(120, tonumber(_G.historyMinutes) or 5))
 end
 
 --Refreshes the options list
@@ -358,6 +365,8 @@ function _G.refreshOptionList()
 	optionList["modemChannel"] = modemChannel
 	debugOutput("Variable: pingInterval")
 	optionList["pingInterval"] = pingInterval
+	debugOutput("Variable: historyMinutes")
+	optionList["historyMinutes"] = historyMinutes
 	optionList["debug"] = debug
 	debugOutput("Variable: autoUpdate")
 	optionList["autoUpdate"] = autoUpdate

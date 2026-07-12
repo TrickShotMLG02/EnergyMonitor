@@ -6,6 +6,7 @@
   transferType = "n/a",
   modemChannel = 5,
   pingInterval = 0.5,
+  historyMinutes = 5,
   autoUpdate = 1,
   debug = 0
 }

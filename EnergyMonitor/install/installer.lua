@@ -300,7 +300,8 @@ function configureInstall()
       program = "",
       peripheralType = "n/a",
       transferType = "n/a",
-      modemChannel = 5
+      modemChannel = 5,
+      historyMinutes = 5
     }
 
     config.program = promptChoice("Select this computer's role", {
@@ -325,6 +326,7 @@ function configureInstall()
     end
 
     config.modemChannel = promptNumber("Set the modem channel/port used by this EnergyMonitor network", 5, 0, 65535)
+    config.historyMinutes = promptNumber("Set the stored energy history window in minutes", 5, 1, 120)
 
     term.clear()
     term.setCursorPos(1,1)
@@ -334,6 +336,7 @@ function configureInstall()
     print("Peripheral type: "..config.peripheralType)
     print("Transfer type: "..config.transferType)
     print("Modem channel/port: "..config.modemChannel)
+    print("History window (minutes): "..config.historyMinutes)
     print()
 
     if promptYesNoInline("Use these settings?") then
@@ -464,6 +467,7 @@ if not update then
   updateOptionFile("transferType", installConfig.transferType)
   updateOptionFile("peripheralType", installConfig.peripheralType)
   updateOptionFile("modemChannel", installConfig.modemChannel)
+  updateOptionFile("historyMinutes", installConfig.historyMinutes)
 end
 
 updateOptionFile("version", getVersion())

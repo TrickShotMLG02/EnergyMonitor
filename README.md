@@ -1,6 +1,6 @@
 # EnergyMonitor
 
-EnergyMonitor is a ComputerCraft/CC:Tweaked program for monitoring energy storage and transfer rates across multiple computers and peripherals. A server collects data from client computers and broadcasts a combined view to one or more monitor computers.
+EnergyMonitor is a ComputerCraft/CC:Tweaked program for monitoring energy storage and transfer rates across multiple computers and peripherals. A server collects data from client computers and broadcasts a combined view to one or more monitor computers. The monitor includes a `History` button that switches to a rolling stored-energy plot while keeping the version footer visible.
 
 ## How It Works
 
@@ -46,6 +46,7 @@ The installer will ask for:
 - Client peripheral type, when installing a client
 - Transfer direction, when installing a transfer client
 - Modem channel/port
+- Stored energy history window in minutes
 - Computer label
 - Startup installation
 
@@ -155,6 +156,7 @@ Important options:
 - `peripheralType`: `capacitor`, `transfer`, or `n/a`
 - `transferType`: `input`, `output`, `both`, or `n/a`
 - `modemChannel`: modem channel/port used by this EnergyMonitor network
+- `historyMinutes`: stored-energy history window shown on the monitor, from 1 to 120 minutes
 - `debug`: set to `1` for debug output
 
 ## Troubleshooting
@@ -182,7 +184,7 @@ Some peripherals do not expose every transfer method. EnergyMonitor ignores miss
 
 **Monitor is too small**
 
-Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks high is recommended. The monitor program expects enough space for the header, filter controls, device cells, and footer.
+Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks high is recommended. The monitor program expects enough space for the header, history graph, filter controls, device cells, and footer.
 
 ## Updating
 
