@@ -24,6 +24,12 @@ local effectiveRate = 0
 local monitorUpdateAvailable = false
 local lastUpdateCheck = -60
 local noticeBlinkState = false
+local historyMinutes = math.max(1, math.min(120, tonumber(_G.historyMinutes) or 5))
+local historySampleSeconds = math.max(1, historyMinutes * 60)
+local historyScalePadding = 0.1
+local historyMode = false
+local historyData = {}
+local historyHasServerData = false
 
 local displayFilter = {
     showDisconnected = true,
@@ -90,6 +96,19 @@ end
 local displayedCells = {}
 local versionLbl = {}
 local versionNoticeLbl = {}
+local historyView = {}
+local historyHeader = {}
+local historyExitBtn = {}
+local historyTitleLbl = {}
+local historyInOutLbl = {}
+local historyRateLbl = {}
+local historyEtaLbl = {}
+local historyPlot = {}
+local historyAxisPanel = {}
+local historyAxisMaxLbl = {}
+local historyAxisMidLbl = {}
+local historyAxisMinLbl = {}
+local historyTimeLbl = {}
 
 -- create main window
 local main = basalt.addMonitor()
@@ -110,7 +129,7 @@ local sortAttrBtn = {}
 local sortOrderBtn = {}
 
 -- flexbox that contains the individual energy meter displays
-local main = flex:addFlexbox():setWrap("wrap"):setBackground(bgColor):setSize("parent.w", "parent.h" .. "-" .. headerHeight + filterHeaderHeight + footerHeight + versionFooterHeight):setSpacing(cellSpacing):setJustifyContent("center")--:setOffset(-1, 0)
+local main = flex:addFlexbox():setWrap("wrap"):setBackground(bgColor):setSize("parent.w", "parent.h-" .. (headerHeight + filterHeaderHeight + footerHeight + versionFooterHeight)):setSpacing(cellSpacing):setJustifyContent("center")--:setOffset(-1, 0)
 
 -- frame that contains the footer (previous, next, page number)
 local footer = flex:addFrame():setBackground(footerColor):setSize("parent.w", footerHeight)
@@ -163,6 +182,14 @@ local countDisplayableCells
 local updatePageCount
 local updateMonitorValues
 local updateRuntimeFooter
+local updateHistoryOverlay
+local computeHistoryScale
+local getEtaText
+local setMonitorMode
+local pruneHistoryData
+local sampleHistoryPoint
+local drawHistoryPlot
+local safeHistoryDraw
 local showServerNotice
 local hideServerNotice
 local animateButtonClick
@@ -229,6 +256,8 @@ listen = function()
 
             -- calculate if the energy storage is being charged or discharged
             effectiveRate = inputRate - outputRate
+            historyHasServerData = true
+            sampleHistoryPoint()
 			
 			-- sort the transferrers that are displayed on screen based on filters
 			sortTransferrers()
@@ -322,6 +351,320 @@ updateRuntimeFooterLabel = function()
     end
 end
 
+getEtaText = function()
+    if effectiveRate < 0 then
+        local eta = storedEnergy / effectiveRate
+        return _G.convertTicksToTime(-eta)
+    elseif effectiveRate > 0 then
+        local eta = (maxEnergy - storedEnergy) / effectiveRate
+        return _G.convertTicksToTime(eta)
+    end
+
+    return "inf"
+end
+
+pruneHistoryData = function()
+    local cutoff = os.clock() - historySampleSeconds
+    local pruned = {}
+
+    for _, point in ipairs(historyData) do
+        if point.time >= cutoff then
+            table.insert(pruned, point)
+        end
+    end
+
+    historyData = pruned
+end
+
+computeHistoryScale = function(points)
+    local minValue = nil
+    local maxValue = nil
+
+    for _, point in ipairs(points or {}) do
+        local value = math.max(0, tonumber(point.value) or 0)
+        if minValue == nil or value < minValue then
+            minValue = value
+        end
+        if maxValue == nil or value > maxValue then
+            maxValue = value
+        end
+    end
+
+    if minValue == nil or maxValue == nil then
+        return 0, 1
+    end
+
+    if minValue ~= minValue or maxValue ~= maxValue then
+        return 0, 1
+    end
+
+    local range = maxValue - minValue
+    local padding = math.max(range * historyScalePadding, math.max(1, math.abs(maxValue) * 0.05))
+    minValue = math.max(0, minValue - padding)
+    maxValue = maxValue + padding
+
+    if minValue ~= minValue or maxValue ~= maxValue then
+        return 0, 1
+    end
+
+    if maxValue <= minValue then
+        maxValue = minValue + 1
+    end
+
+    return minValue, maxValue
+end
+
+sampleHistoryPoint = function()
+    if not historyHasServerData then
+        return
+    end
+
+    local now = os.clock()
+    if #historyData > 0 and now - historyData[#historyData].time < 1 then
+        return
+    end
+
+    table.insert(historyData, {
+        time = now,
+        value = math.max(0, tonumber(storedEnergy) or 0)
+    })
+    pruneHistoryData()
+end
+
+local function drawLineCell(target, x, y, color)
+    target:addBackgroundBox(x, y, 1, 1, color)
+    target:addForegroundBox(x, y, 1, 1, color)
+    target:addTextBox(x, y, 1, 1, " ")
+end
+
+local function drawPlotLine(target, x1, y1, x2, y2, color)
+    local dx = math.abs(x2 - x1)
+    local dy = math.abs(y2 - y1)
+    local sx = x1 < x2 and 1 or -1
+    local sy = y1 < y2 and 1 or -1
+    local err = dx - dy
+
+    while true do
+        drawLineCell(target, x1, y1, color)
+        if x1 == x2 and y1 == y2 then
+            break
+        end
+
+        local e2 = 2 * err
+        if e2 > -dy then
+            err = err - dy
+            x1 = x1 + sx
+        end
+        if e2 < dx then
+            err = err + dx
+            y1 = y1 + sy
+        end
+    end
+end
+
+drawHistoryPlot = function()
+    if historyPlot == nil then
+        return
+    end
+
+    local width, height = historyPlot:getSize()
+    if width == nil or height == nil or width < 1 or height < 1 then
+        return
+    end
+
+    local now = os.clock()
+    local cutoff = now - historySampleSeconds
+    local points = {}
+
+    for _, point in ipairs(historyData) do
+        if point.time >= cutoff then
+            table.insert(points, point)
+        end
+    end
+
+    local plotBg = colors.black
+    local frameColor = colors.gray
+    local fillColor = colors.green
+    local lineColor = colors.lime
+    local dotColor = colors.lime
+    for y = 1, height do
+        historyPlot:addBackgroundBox(1, y, width, 1, plotBg)
+        historyPlot:addForegroundBox(1, y, width, 1, plotBg)
+        historyPlot:addTextBox(1, y, width, 1, string.rep(" ", width))
+    end
+
+    for x = 1, width do
+        historyPlot:addBackgroundBox(x, 1, 1, 1, frameColor)
+        historyPlot:addForegroundBox(x, 1, 1, 1, frameColor)
+        historyPlot:addTextBox(x, 1, 1, 1, " ")
+        historyPlot:addBackgroundBox(x, height, 1, 1, frameColor)
+        historyPlot:addForegroundBox(x, height, 1, 1, frameColor)
+        historyPlot:addTextBox(x, height, 1, 1, " ")
+    end
+
+    for y = 1, height do
+        historyPlot:addBackgroundBox(1, y, 1, 1, frameColor)
+        historyPlot:addForegroundBox(1, y, 1, 1, frameColor)
+        historyPlot:addTextBox(1, y, 1, 1, " ")
+        historyPlot:addBackgroundBox(width, y, 1, 1, frameColor)
+        historyPlot:addForegroundBox(width, y, 1, 1, frameColor)
+        historyPlot:addTextBox(width, y, 1, 1, " ")
+    end
+
+    if #points == 0 then
+        return
+    end
+
+    local scaleMin, scaleMax = computeHistoryScale(points)
+    local scaleRange = math.max(1, scaleMax - scaleMin)
+    local plotLeft = 2
+    local plotTop = 2
+    local plotRight = math.max(2, width - 1)
+    local plotBottom = math.max(2, height - 1)
+    local plotWidth = math.max(1, plotRight - plotLeft + 1)
+    local plotHeight = math.max(1, plotBottom - plotTop + 1)
+    local plotted = {}
+
+    for _, point in ipairs(points) do
+        local ratio = 0
+        if historySampleSeconds > 0 then
+            ratio = (point.time - cutoff) / historySampleSeconds
+        end
+        local x = plotLeft + math.floor(ratio * (plotWidth - 1))
+        if x < plotLeft then
+            x = plotLeft
+        elseif x > plotRight then
+            x = plotRight
+        end
+
+        local yRatio = (math.max(0, point.value) - scaleMin) / scaleRange
+        if yRatio < 0 then
+            yRatio = 0
+        elseif yRatio > 1 then
+            yRatio = 1
+        end
+
+        local y = plotBottom - math.floor(yRatio * (plotHeight - 1))
+        if y < plotTop then
+            y = plotTop
+        elseif y > plotBottom then
+            y = plotBottom
+        end
+
+        plotted[x] = plotted[x] or {}
+        plotted[x].y = y
+        plotted[x].value = point.value
+    end
+
+    local prevX = nil
+    local prevY = nil
+    for x = 1, width do
+        local point = plotted[x]
+        if point ~= nil then
+            for fillY = point.y, plotBottom do
+                historyPlot:addBackgroundBox(x, fillY, 1, 1, fillColor)
+                historyPlot:addForegroundBox(x, fillY, 1, 1, fillColor)
+                historyPlot:addTextBox(x, fillY, 1, 1, " ")
+            end
+
+            if prevX ~= nil and prevY ~= nil then
+                drawPlotLine(historyPlot, prevX, prevY, x, point.y, lineColor)
+            else
+                drawLineCell(historyPlot, x, point.y, lineColor)
+            end
+
+            drawLineCell(historyPlot, x, point.y, dotColor)
+            prevX = x
+            prevY = point.y
+        end
+    end
+end
+
+safeHistoryDraw = function()
+    local ok, err = pcall(drawHistoryPlot)
+    if not ok and debugPrint then
+        print("History draw error: " .. tostring(err))
+    end
+end
+
+setMonitorMode = function(mode)
+    historyMode = (mode == "history")
+
+    if historyMode then
+        sampleHistoryPoint()
+    end
+
+    if historyView ~= nil and historyView.show ~= nil and historyView.hide ~= nil then
+        if historyMode then
+            historyView:show()
+        else
+            historyView:hide()
+        end
+    end
+
+    if historyMode and historyPlot ~= nil and historyPlot.updateDraw ~= nil then
+        historyPlot:updateDraw()
+    end
+
+    if noticeFrame ~= nil and noticeFrame.hide ~= nil then
+        if historyMode then
+            noticeFrame:show()
+        elseif _G.receiveMessage ~= nil then
+            -- default mode restores server notice on demand
+        end
+    end
+end
+
+updateHistoryOverlay = function()
+    if historyTitleLbl ~= nil and historyTitleLbl.setText ~= nil then
+        historyTitleLbl:setText("Stored Energy History (last " .. historyMinutes .. "m)")
+    end
+
+    if historyExitBtn ~= nil and historyExitBtn.setText ~= nil then
+        historyExitBtn:setText("Back")
+    end
+
+    if historyInOutLbl ~= nil and historyInOutLbl.setText ~= nil then
+        historyInOutLbl:setText("In: " .. _G.numberToEnergyUnit(inputRate) .. "/t  Out: " .. _G.numberToEnergyUnit(outputRate) .. "/t")
+    end
+
+    if historyRateLbl ~= nil and historyRateLbl.setText ~= nil then
+        local rateColor = colors.yellow
+        local rateText = "Eff: +0.0 FE/t"
+        if effectiveRate < 0 then
+            rateColor = colors.red
+            rateText = "Eff: -" .. _G.numberToEnergyUnit(math.abs(effectiveRate)) .. "/t"
+        elseif effectiveRate > 0 then
+            rateColor = colors.lime
+            rateText = "Eff: +" .. _G.numberToEnergyUnit(effectiveRate) .. "/t"
+        end
+        historyRateLbl:setText(rateText)
+        historyRateLbl:setForeground(rateColor)
+    end
+
+    if historyEtaLbl ~= nil and historyEtaLbl.setText ~= nil then
+        historyEtaLbl:setText("ETA: " .. getEtaText())
+    end
+
+    local scaleMin, scaleMax = computeHistoryScale(historyData)
+    local midValue = scaleMin + ((scaleMax - scaleMin) / 2)
+    local minText = _G.numberToEnergyUnit(scaleMin)
+    local midText = _G.numberToEnergyUnit(midValue)
+    local maxText = _G.numberToEnergyUnit(scaleMax)
+    if historyAxisMaxLbl ~= nil and historyAxisMaxLbl.setText ~= nil then
+        historyAxisMaxLbl:setText("Max " .. maxText)
+    end
+    if historyAxisMidLbl ~= nil and historyAxisMidLbl.setText ~= nil then
+        historyAxisMidLbl:setText("Mid " .. midText)
+    end
+    if historyAxisMinLbl ~= nil and historyAxisMinLbl.setText ~= nil then
+        historyAxisMinLbl:setText("Min " .. minText)
+    end
+    if historyTimeLbl ~= nil and historyTimeLbl.setText ~= nil then
+        historyTimeLbl:setText("Time " .. historyMinutes .. "m")
+    end
+end
+
 
 
 --------------
@@ -333,10 +676,102 @@ setupMonitor = function()
     -- setup header
     energyLbl = header:addLabel():setText("Energy: STORED"):setFontSize(1):setSize("parent.w / 2", 1):setPosition(0, 1):setTextAlign("center")
     energyBar = header:addProgressbar():setProgress(0):setSize("parent.w / 3", 1):setPosition("1/12 * parent.w", 3):setProgressBar(colors.lime):setDirection("right"):setBackground(colors.black)
+    local historyBtn = header:addButton()
+        :setText("Graph")
+        :setSize(7, 1)
+        :setBackground(btnDefaultColor)
+        :setPosition("(1/12 * parent.w) + (parent.w / 3) + 1", 3)
+    historyBtn:onClick(basalt.schedule(function(self)
+        animateButtonClick(self)
+        pcall(setMonitorMode, "history")
+        updateHistoryOverlay()
+    end))
     rateLblIn = header:addLabel():setText("Transfer: IN"):setFontSize(1):setSize("parent.w / 3", 1):setPosition("2 * parent.w / 3", 1):setTextAlign("left")
     rateLblOut = header:addLabel():setText("Transfer: OUT" ):setFontSize(1):setSize("parent.w / 3", 1):setPosition(" 2 * parent.w / 3", 2):setTextAlign("left")
     effectiveRateLbl = header:addLabel():setText("Eff. Rate: "):setFontSize(1):setSize("parent.w / 3", 1):setPosition("2 * parent.w / 3", 3):setTextAlign("left")
     etaLbl = header:addLabel():setText("ETA: "):setFontSize(1):setSize("parent.w / 3", 1):setPosition("2 * parent.w / 3", 4):setTextAlign("left")
+
+    historyView = monitorRoot:addFrame()
+        :setBackground(colors.black)
+        :setSize("parent.w", "parent.h-" .. versionFooterHeight)
+        :setPosition(1, 1)
+        :setZIndex(60)
+        :hide()
+    historyHeader = historyView:addFrame()
+        :setBackground(colors.black)
+        :setSize("parent.w", 3)
+        :setPosition(1, 1)
+    historyTitleLbl = historyHeader:addLabel()
+        :setText("Stored Energy History (last " .. historyMinutes .. "m)")
+        :setFontSize(1)
+        :setSize("parent.w-14", 1)
+        :setPosition(1, 1)
+        :setTextAlign("left")
+        :setForeground(colors.lime)
+    historyInOutLbl = historyHeader:addLabel()
+        :setText("")
+        :setSize("parent.w / 2 - 2", 1)
+        :setPosition(2, 2)
+        :setTextAlign("left")
+        :setForeground(colors.white)
+    historyRateLbl = historyHeader:addLabel()
+        :setText("")
+        :setSize("parent.w / 4", 1)
+        :setPosition("parent.w / 2 - (parent.w / 8) + 1", 2)
+        :setTextAlign("center")
+        :setForeground(colors.yellow)
+    historyEtaLbl = historyHeader:addLabel()
+        :setText("")
+        :setSize("parent.w / 4", 1)
+        :setPosition("parent.w - (parent.w / 4) - 1", 2)
+        :setTextAlign("right")
+        :setForeground(colors.white)
+    historyExitBtn = historyView:addButton()
+        :setText("Back")
+        :setSize(8, 1)
+        :setBackground(btnDefaultColor)
+        :setPosition("parent.w-9", "parent.h-1")
+    historyExitBtn:onClick(basalt.schedule(function(self)
+        animateButtonClick(self)
+        pcall(setMonitorMode, "default")
+    end))
+    historyPlot = historyView:addFrame()
+        :setBackground(colors.black)
+        :setSize("parent.w-18", "parent.h-6")
+        :setPosition(2, 4)
+    historyAxisPanel = historyView:addFrame()
+        :setBackground(colors.black)
+        :setSize(14, "parent.h-6")
+        :setPosition("parent.w-14", 4)
+    historyAxisMaxLbl = historyAxisPanel:addLabel()
+        :setText("Max")
+        :setSize("parent.w", 1)
+        :setPosition(1, 2)
+        :setTextAlign("right")
+        :setForeground(colors.white)
+    historyAxisMidLbl = historyAxisPanel:addLabel()
+        :setText("Mid")
+        :setSize("parent.w", 1)
+        :setPosition(1, "parent.h/2")
+        :setTextAlign("right")
+        :setForeground(colors.white)
+    historyAxisMinLbl = historyAxisPanel:addLabel()
+        :setText("Min")
+        :setSize("parent.w", 1)
+        :setPosition(1, "parent.h-1")
+        :setTextAlign("right")
+        :setForeground(colors.white)
+    historyTimeLbl = historyView:addLabel()
+        :setText("Time")
+        :setSize("parent.w-18", 1)
+        :setPosition(2, "parent.h-3")
+        :setTextAlign("center")
+        :setForeground(colors.gray)
+    historyPlot:addPostDraw("history-plot", function()
+        safeHistoryDraw()
+    end, 1)
+    updateHistoryOverlay()
+    setMonitorMode((_G.monitorOpenGraphOnStart == true) and "history" or "default")
 
     -- setup filter header
     local showDisconnectedBtn = filterHeader:addButton():setText("Hide Disconnected"):setSize(19, 1):setBackground(btnDefaultColor):onClick(basalt.schedule(function(self)
@@ -400,6 +835,9 @@ end
 showServerNotice = function()
     if noticeFrame ~= nil and noticeFrame.show ~= nil then
         noticeLineTwo:setText("Channel: " .. tostring(_G.modemChannel))
+        if noticeFrame.setZIndex ~= nil then
+            noticeFrame:setZIndex(70)
+        end
         noticeFrame:show()
     end
 end
@@ -467,22 +905,7 @@ updateTransferDisplay = function()
 
 
 
-    -- calculate estimated time until full/empty
-    local eta = 0
-    
-    if effectiveRate < 0 then
-        -- time until empty
-        eta = storedEnergy / effectiveRate
-        etaLbl:setText("ETA: " .. _G.convertTicksToTime(-eta))
-    elseif effectiveRate > 0 then
-        -- time until full
-        eta = (maxEnergy - storedEnergy) / effectiveRate
-        etaLbl:setText("ETA: " .. _G.convertTicksToTime(eta))
-    else
-        -- time should be "inf"
-        eta = -1
-        etaLbl:setText("ETA: inf")
-    end
+    etaLbl:setText("ETA: " .. getEtaText())
 end
 
 -- function to update all display cells (transferrers) with their new current values
@@ -571,6 +994,17 @@ updateRuntimeFooter = function()
         end
         checkMonitorUpdates()
         updateVersionFooter()
+        os.sleep(1)
+    end
+end
+
+updateHistoryGraph = function()
+    while true do
+        sampleHistoryPoint()
+        updateHistoryOverlay()
+        if historyMode and historyPlot ~= nil and historyPlot.updateDraw ~= nil then
+            historyPlot:updateDraw()
+        end
         os.sleep(1)
     end
 end
@@ -841,7 +1275,7 @@ end
 print("THIS IS THE MONITOR PROGRAM!")
 
 -- Run the pinger and the listener and monitor updaters in parallel
-parallel.waitForAll(setupMonitor, listen, updateMonitorValues, updateRuntimeFooter)
+parallel.waitForAll(setupMonitor, listen, updateMonitorValues, updateRuntimeFooter, updateHistoryGraph)
 
 --------------------------------------
 -- ACTUAL MONITOR PROGRAM ENDS HERE --
