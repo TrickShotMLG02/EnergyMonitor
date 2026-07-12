@@ -10,7 +10,7 @@ local relPath = "/EnergyMonitor/"
 local repoOwner = "TrickShotMLG02"
 local repoName = "EnergyMonitor"
 local repoUrl = "https://cdn.jsdelivr.net/gh/" .. repoOwner .. "/" .. repoName .. "@"
-local tagsApiUrl = "https://api.github.com/repos/" .. repoOwner .. "/" .. repoName .. "/tags"
+local tagsApiUrl = "https://data.jsdelivr.com/v1/package/gh/" .. repoOwner .. "/" .. repoName
 local installerCompatRef = "v2.0.0"
 local selectedLang = {}
 local debugGithubApi = false
@@ -23,8 +23,7 @@ end
 
 local function apiHeaders()
 	return {
-		["Accept"] = "application/vnd.github+json",
-		["X-GitHub-Api-Version"] = "2026-03-10",
+		["Accept"] = "application/json",
 		["User-Agent"] = "EnergyMonitor"
 	}
 end
@@ -32,7 +31,7 @@ end
 local function requestJson(url)
 	local response = http.get(url, apiHeaders())
 	if response == nil then
-		error("GitHub API request failed: " .. url)
+		error("Remote request failed: " .. url)
 	end
 
 	local code = nil
@@ -43,20 +42,20 @@ local function requestJson(url)
 	response.close()
 
 	if code ~= nil and code ~= 200 then
-		error("GitHub API returned HTTP " .. tostring(code) .. " for " .. url .. ": " .. string.sub(body, 1, 120))
+		error("Remote request returned HTTP " .. tostring(code) .. " for " .. url .. ": " .. string.sub(body, 1, 120))
 	end
 
-	debugPrint("GitHub API URL: " .. url)
-	debugPrint("GitHub API raw: " .. string.sub(body, 1, 400))
+	debugPrint("Remote request URL: " .. url)
+	debugPrint("Remote request raw: " .. string.sub(body, 1, 400))
 
 	local ok, data = pcall(textutils.unserializeJSON, body)
 	if not ok then
-		error("GitHub API response was not valid JSON for " .. url .. ": " .. string.sub(body, 1, 120))
+		error("Remote response was not valid JSON for " .. url .. ": " .. string.sub(body, 1, 120))
 	end
 
-	debugPrint("GitHub API parsed type: " .. type(data))
+	debugPrint("Remote response parsed type: " .. type(data))
 	if type(data) == "table" then
-		debugPrint("GitHub API parsed count: " .. tostring(#data))
+		debugPrint("Remote response parsed count: " .. tostring(#data))
 	end
 
 	return data
@@ -215,46 +214,38 @@ end
 
 local function fetchAllTags()
 	local tags = {}
-	local page = 1
-
-	while true do
-		local data = requestJson(tagsApiUrl .. "?per_page=100&page=" .. page)
-		if type(data) ~= "table" then
-			break
-		end
-
-		if not isArrayTable(data) then
-			if type(data.message) == "string" then
-				error("GitHub API returned an error: " .. data.message)
-			end
-			error("GitHub API returned an unexpected JSON object from " .. tagsApiUrl)
-		end
-
-		if #data == 0 then
-			break
-		end
-
-		for _, entry in ipairs(data) do
-			if type(entry) == "table" and type(entry.name) == "string" then
-				debugPrint("GitHub tag entry: " .. entry.name)
-				local parsed = parseSemverTag(entry.name)
-				if parsed ~= nil then
-					debugPrint("GitHub tag parsed OK: " .. parsed.raw)
-					table.insert(tags, parsed)
-				else
-					debugPrint("GitHub tag rejected by parser: " .. entry.name)
-				end
-			end
-		end
-
-		if #data < 100 then
-			break
-		end
-
-		page = page + 1
+	local data = requestJson(tagsApiUrl)
+	if type(data) ~= "table" then
+		error("Could not read repository versions from jsDelivr.")
 	end
 
-	debugPrint("GitHub parsed semver tags total: " .. tostring(#tags))
+	if type(data.versions) ~= "table" then
+		error("jsDelivr returned an unexpected package object from " .. tagsApiUrl)
+	end
+
+	for _, version in ipairs(data.versions) do
+		if type(version) == "string" then
+			debugPrint("jsDelivr version entry: " .. version)
+			local parsed = parseSemverTag(version)
+			if parsed ~= nil then
+				debugPrint("jsDelivr version parsed OK: " .. parsed.raw)
+				table.insert(tags, parsed)
+			else
+				debugPrint("jsDelivr version rejected by parser: " .. version)
+			end
+		elseif type(version) == "table" and type(version.version) == "string" then
+			debugPrint("jsDelivr version entry: " .. version.version)
+			local parsed = parseSemverTag(version.version)
+			if parsed ~= nil then
+				debugPrint("jsDelivr version parsed OK: " .. parsed.raw)
+				table.insert(tags, parsed)
+			else
+				debugPrint("jsDelivr version rejected by parser: " .. version.version)
+			end
+		end
+	end
+
+	debugPrint("jsDelivr parsed semver tags total: " .. tostring(#tags))
 
 	return tags
 end
@@ -289,13 +280,13 @@ end
 local function resolveRequestedRef(requested)
 	local tags = fetchAllTags()
 	if type(tags) ~= "table" then
-		error("Could not read repository tags from GitHub.")
+		error("Could not read repository versions from jsDelivr.")
 	end
 
 	if requested == nil or requested == "" or requested == "latest" or requested == "stable" or requested == "main" then
 		local latestStable = selectLatestTag(tags, "stable")
 		if latestStable == nil then
-			error("No stable semver tag found. Parsed " .. tostring(#tags) .. " semver tag(s) from GitHub.")
+			error("No stable semver tag found. Parsed " .. tostring(#tags) .. " semver tag(s) from jsDelivr.")
 		end
 		return latestStable
 	end

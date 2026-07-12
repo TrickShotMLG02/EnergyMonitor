@@ -25,13 +25,12 @@ _G.language = {}
 _G.repoOwner = "TrickShotMLG02"
 _G.repoName = "EnergyMonitor"
 _G.repoUrl = "https://cdn.jsdelivr.net/gh/" .. _G.repoOwner .. "/" .. _G.repoName .. "@"
-_G.tagsApiUrl = "https://api.github.com/repos/" .. _G.repoOwner .. "/" .. _G.repoName .. "/tags"
+_G.tagsApiUrl = "https://data.jsdelivr.com/v1/package/gh/" .. _G.repoOwner .. "/" .. _G.repoName
 _G.installerCompatRef = "v2.0.0"
 
 local function apiHeaders()
 	return {
-		["Accept"] = "application/vnd.github+json",
-		["X-GitHub-Api-Version"] = "2026-03-10",
+		["Accept"] = "application/json",
 		["User-Agent"] = "EnergyMonitor"
 	}
 end
@@ -211,36 +210,27 @@ end
 
 local function fetchAllRepositoryTags()
 	local tags = {}
-	local page = 1
+	local data = requestJson(_G.tagsApiUrl)
+	if type(data) ~= "table" then
+		return tags
+	end
 
-	while true do
-		local data = requestJson(_G.tagsApiUrl .. "?per_page=100&page=" .. page)
-		if type(data) ~= "table" then
-			break
-		end
+	if type(data.versions) ~= "table" then
+		return tags
+	end
 
-		if not isArrayTable(data) then
-			return tags
-		end
-
-		if #data == 0 then
-			break
-		end
-
-		for _, entry in ipairs(data) do
-			if type(entry) == "table" and type(entry.name) == "string" then
-				local parsed = parseSemverTag(entry.name)
-				if parsed ~= nil then
-					table.insert(tags, parsed)
-				end
+	for _, version in ipairs(data.versions) do
+		if type(version) == "string" then
+			local parsed = parseSemverTag(version)
+			if parsed ~= nil then
+				table.insert(tags, parsed)
+			end
+		elseif type(version) == "table" and type(version.version) == "string" then
+			local parsed = parseSemverTag(version.version)
+			if parsed ~= nil then
+				table.insert(tags, parsed)
 			end
 		end
-
-		if #data < 100 then
-			break
-		end
-
-		page = page + 1
 	end
 
 	return tags
