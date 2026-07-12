@@ -41,7 +41,7 @@ local sortingAttr = "name"
 local sortingDir = "asc"
 
 -- debugging
-local debugPrint = true
+local debugPrint = (_G.debugEnabled == 1 or _G.debugEnabled == true)
 local debugUI = false
 local lastServerWarning = 0
 
@@ -100,6 +100,7 @@ local historyView = {}
 local historyHeader = {}
 local historyExitBtn = {}
 local historyTitleLbl = {}
+local historyDebugLbl = {}
 local historyInOutLbl = {}
 local historyRateLbl = {}
 local historyEtaLbl = {}
@@ -561,10 +562,11 @@ drawHistoryPlot = function()
     for x = 1, width do
         local point = plotted[x]
         if point ~= nil then
-            for fillY = point.y, plotBottom do
-                historyPlot:addBackgroundBox(x, fillY, 1, 1, fillColor)
-                historyPlot:addForegroundBox(x, fillY, 1, 1, fillColor)
-                historyPlot:addTextBox(x, fillY, 1, 1, " ")
+            local fillHeight = plotBottom - point.y + 1
+            if fillHeight > 0 then
+                historyPlot:addBackgroundBox(x, point.y, 1, fillHeight, fillColor)
+                historyPlot:addForegroundBox(x, point.y, 1, fillHeight, fillColor)
+                historyPlot:addTextBox(x, point.y, 1, fillHeight, " ")
             end
 
             if prevX ~= nil and prevY ~= nil then
@@ -741,6 +743,15 @@ setupMonitor = function()
         :setPosition(1, 1)
         :setTextAlign("left")
         :setForeground(colors.lime)
+    historyDebugLbl = historyHeader:addLabel()
+        :setText("Debug")
+        :setSize("parent.w-14", 1)
+        :setPosition(2, 3)
+        :setTextAlign("left")
+        :setForeground(colors.gray)
+    if not debugPrint and historyDebugLbl.hide ~= nil then
+        historyDebugLbl:hide()
+    end
     historyInOutLbl = historyHeader:addLabel()
         :setText("")
         :setSize("parent.w / 2 - 2", 1)
