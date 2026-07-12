@@ -456,7 +456,6 @@ drawHistoryPlot = function()
 
     local plotBg = colors.black
     local frameColor = colors.gray
-    local axisColor = colors.white
     local fillColor = colors.green
     local lineColor = colors.lime
     local dotColor = colors.lime
@@ -482,19 +481,6 @@ drawHistoryPlot = function()
         historyPlot:addBackgroundBox(width, y, 1, 1, frameColor)
         historyPlot:addForegroundBox(width, y, 1, 1, frameColor)
         historyPlot:addTextBox(width, y, 1, 1, " ")
-    end
-
-    if width > 2 and height > 2 then
-        for x = 2, width - 1 do
-            historyPlot:addBackgroundBox(x, height - 1, 1, 1, axisColor)
-            historyPlot:addForegroundBox(x, height - 1, 1, 1, axisColor)
-            historyPlot:addTextBox(x, height - 1, 1, 1, " ")
-        end
-        for y = 2, height - 1 do
-            historyPlot:addBackgroundBox(2, y, 1, 1, axisColor)
-            historyPlot:addForegroundBox(2, y, 1, 1, axisColor)
-            historyPlot:addTextBox(2, y, 1, 1, " ")
-        end
     end
 
     if #points == 0 then
@@ -706,7 +692,7 @@ setupMonitor = function()
     end))
     historyPlot = historyView:addFrame()
         :setBackground(colors.black)
-        :setSize("parent.w-12", "parent.h-6")
+        :setSize("parent.w-18", "parent.h-6")
         :setPosition(2, 4)
     historyAxisPanel = historyView:addFrame()
         :setBackground(colors.black)
