@@ -37,7 +37,7 @@ else
 end
 
 --Url for file downloads
-local relUrl = repoUrl..versionRef.."/EnergyMonitor/"
+local relUrl = repoUrl..(versionRef:gsub("^v", "")).."/EnergyMonitor/"
 
 --===== Functions =====
 

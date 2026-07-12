@@ -121,7 +121,7 @@ local function parseSemverTag(tag)
 	return {
 		raw = tag,
 		core = parts,
-		prerelease = prerelease ~= nil and prerelease:sub(2) or nil
+		prerelease = prerelease
 	}
 end
 
@@ -296,6 +296,8 @@ local function resolveRequestedRef(requested)
 		error("Could not read repository versions from jsDelivr.")
 	end
 
+	local normalizedRequested = stripVersionPrefix(requested)
+
 	if requested == nil or requested == "" or requested == "latest" or requested == "stable" or requested == "main" then
 		local latestStable = selectLatestTag(tags, "stable")
 		if latestStable == nil then
@@ -313,17 +315,8 @@ local function resolveRequestedRef(requested)
 	end
 
 	for _, tag in ipairs(tags) do
-		if tag.raw == requested then
+		if tag.raw == requested or tag.raw == normalizedRequested or stripVersionPrefix(tag.raw) == normalizedRequested then
 			return tag.raw
-		end
-	end
-
-	if requested:sub(1, 1) ~= "v" and requested:sub(1, 1) ~= "V" then
-		local prefixed = "v" .. requested
-		for _, tag in ipairs(tags) do
-			if tag.raw == prefixed then
-				return tag.raw
-			end
 		end
 	end
 
@@ -339,7 +332,7 @@ local function resolveRefFromArgs()
 end
 
 local function setRelUrl(ref)
-	return repoUrl .. ref .. "/EnergyMonitor/"
+	return repoUrl .. stripVersionPrefix(ref) .. "/EnergyMonitor/"
 end
 
 local function downloadInstaller(versionRef)
