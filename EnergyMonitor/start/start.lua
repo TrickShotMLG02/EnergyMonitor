@@ -26,6 +26,7 @@ _G.repoOwner = "TrickShotMLG02"
 _G.repoName = "EnergyMonitor"
 _G.repoUrl = "https://cdn.jsdelivr.net/gh/" .. _G.repoOwner .. "/" .. _G.repoName .. "@"
 _G.tagsApiUrl = "https://api.github.com/repos/" .. _G.repoOwner .. "/" .. _G.repoName .. "/tags"
+_G.installerCompatRef = "v2.0.0"
 
 local function apiHeaders()
 	return {
@@ -277,6 +278,19 @@ function _G.compareRepositoryTags(leftTag, rightTag)
 	return compareParsedTags(left, right)
 end
 
+local function downloadInstallerCompat()
+	local compatUrl = _G.repoUrl .. _G.installerCompatRef .. "/EnergyMonitor/"
+	local gotUrl = http.get(compatUrl .. "install/installer.lua")
+	if gotUrl == nil then
+		error("Could not download compatibility installer from " .. _G.installerCompatRef)
+	end
+
+	local file = fs.open("/EnergyMonitor/install/installer.lua", "w")
+	file.write(gotUrl.readAll())
+	file.close()
+	gotUrl.close()
+end
+
 function  _G.debugOutput(message) 
 	if  _G.debugEnabled == 1 then
 		print(message)
@@ -424,10 +438,11 @@ function _G.showMonitorNotice(title, lines)
 end
 
 function _G.doUpdate(toVer)
-    if autoUpdate == 1 then
-        _G.showMonitorNotice(_G.language:getText("autoUpdateLineOne"), {
-            toVer,
-            _G.language:getText("autoUpdateLineTwo"),
+	if autoUpdate == 1 then
+		downloadInstallerCompat()
+		_G.showMonitorNotice(_G.language:getText("autoUpdateLineOne"), {
+			toVer,
+			_G.language:getText("autoUpdateLineTwo"),
             _G.language:getText("autoUpdateLineThree")
         })
     else
@@ -475,6 +490,7 @@ function _G.doUpdate(toVer)
             if event == "key" then
 
                 if p1 == 90 or p1 == 98 then
+                    downloadInstallerCompat()
                     shell.run("/EnergyMonitor/install/installer.lua update "..toVer)
                     out = true
 					os.reboot()

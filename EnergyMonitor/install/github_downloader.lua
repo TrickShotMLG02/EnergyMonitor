@@ -11,6 +11,7 @@ local repoOwner = "TrickShotMLG02"
 local repoName = "EnergyMonitor"
 local repoUrl = "https://cdn.jsdelivr.net/gh/" .. repoOwner .. "/" .. repoName .. "@"
 local tagsApiUrl = "https://api.github.com/repos/" .. repoOwner .. "/" .. repoName .. "/tags"
+local installerCompatRef = "v2.0.0"
 local selectedLang = {}
 
 local function apiHeaders()
@@ -280,6 +281,20 @@ local function setRelUrl(ref)
 	return repoUrl .. ref .. "/EnergyMonitor/"
 end
 
+local function downloadInstallerCompat()
+	local compatUrl = setRelUrl(installerCompatRef)
+	local installerPath = "/EnergyMonitor/install/installer.lua"
+	local gotUrl = http.get(compatUrl .. "install/installer.lua")
+	if gotUrl == nil then
+		error("Could not download compatibility installer from " .. installerCompatRef)
+	end
+
+	local file = fs.open(installerPath, "w")
+	file.write(gotUrl.readAll())
+	file.close()
+	gotUrl.close()
+end
+
 local function getLanguage()
 	languages = downloadAndRead("supportedLanguages.txt")
 	downloadAndExecuteClass("Language.lua")
@@ -362,7 +377,7 @@ function install(versionRef)
 	relUrl = setRelUrl(versionRef)
 
 	--Downloads the installer
-	writeFile("install/installer.lua")
+	downloadInstallerCompat()
 
 	--execute installer
 	shell.run("/EnergyMonitor/install/installer.lua install " .. versionRef .. " " .. installLang)

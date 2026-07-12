@@ -49,6 +49,8 @@ Use the same modem channel/port for every server, client, and monitor that shoul
 
 If you are installing from a fork, update the repository owner/name constants in `EnergyMonitor/install/github_downloader.lua`, `EnergyMonitor/install/installer.lua`, and `EnergyMonitor/start/start.lua`. If you move the project off GitHub, also adjust the tag-list API URL in those scripts.
 
+Backward-compatible installs and updates use the installer stored at the `v2.0.0` tag. That compatibility tag must exist for older releases to keep installing and updating through the new tag-based flow.
+
 ## Recommended Setup
 
 1. Install one computer as `server`.
@@ -180,6 +182,8 @@ Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks hig
 
 The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates. Updates compare the stored tag against the latest semver tag in the same channel.
 
+If an older installation updates through the new flow, the runtime downloads the `v2.0.0` installer before applying the newer tagged release.
+
 ## Releases
 
 Versioning is tag-based:
@@ -191,6 +195,7 @@ Versioning is tag-based:
 - To publish a release, commit the code and create the matching tag.
 - To publish a beta, tag the commit with the `-beta` suffix.
 - The installer can fetch the latest stable tag, the latest beta tag, or a specific tag directly.
+- The `v2.0.0` tag is the compatibility anchor for old-tag installs and updates.
 
 ## Contributing
 
