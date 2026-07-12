@@ -14,6 +14,7 @@ _G.meterType = 0
 _G.modemChannel = 0
 _G.pingInterval = 0.5
 _G.historyMinutes = 5
+_G.historySaveInterval = 15
 _G.monitorOpenGraphOnStart = false
 _G.autoUpdate = 1
 _G.debugEnabled = 1
@@ -342,6 +343,7 @@ function _G.loadOptionFile()
 	_G.modemChannel = optionList["modemChannel"]
 	_G.pingInterval = optionList["pingInterval"]
 	_G.historyMinutes = optionList["historyMinutes"]
+	_G.historySaveInterval = optionList["historySaveInterval"]
 	_G.monitorOpenGraphOnStart = optionList["monitorOpenGraphOnStart"]
 	_G.autoUpdate = optionList["autoUpdate"]
 	_G.debugEnabled = optionList["debug"]
@@ -350,6 +352,10 @@ function _G.loadOptionFile()
 		_G.historyMinutes = 5
 	end
 	_G.historyMinutes = math.max(1, math.min(120, tonumber(_G.historyMinutes) or 5))
+	if _G.historySaveInterval == nil then
+		_G.historySaveInterval = 15
+	end
+	_G.historySaveInterval = math.max(5, math.min(3600, tonumber(_G.historySaveInterval) or 15))
 	if _G.monitorOpenGraphOnStart == nil then
 		_G.monitorOpenGraphOnStart = false
 	end
@@ -372,6 +378,8 @@ function _G.refreshOptionList()
 	optionList["pingInterval"] = pingInterval
 	debugOutput("Variable: historyMinutes")
 	optionList["historyMinutes"] = historyMinutes
+	debugOutput("Variable: historySaveInterval")
+	optionList["historySaveInterval"] = historySaveInterval
 	debugOutput("Variable: monitorOpenGraphOnStart")
 	optionList["monitorOpenGraphOnStart"] = monitorOpenGraphOnStart
 	optionList["debug"] = debug
