@@ -178,6 +178,17 @@ local function compareParsedTags(left, right)
 	return 0
 end
 
+local function shouldUseCompatInstaller(versionTag)
+	local target = parseSemverTag(versionTag)
+	local compat = parseSemverTag(_G.installerCompatRef)
+
+	if target == nil or compat == nil then
+		return true
+	end
+
+	return compareParsedTags(target, compat) < 0
+end
+
 local function requestJson(url)
 	local response = http.get(url, apiHeaders())
 	if response == nil then
@@ -304,11 +315,16 @@ function _G.compareRepositoryTags(leftTag, rightTag)
 	return compareParsedTags(left, right)
 end
 
-local function downloadInstallerCompat()
-	local compatUrl = _G.repoUrl .. string.gsub(_G.installerCompatRef, "^v", "") .. "/EnergyMonitor/"
+local function downloadInstaller(versionRef)
+	local installerRef = versionRef
+	if shouldUseCompatInstaller(versionRef) then
+		installerRef = _G.installerCompatRef
+	end
+
+	local compatUrl = _G.repoUrl .. string.gsub(installerRef, "^v", "") .. "/EnergyMonitor/"
 	local gotUrl = http.get(compatUrl .. "install/installer.lua")
 	if gotUrl == nil then
-		error("Could not download compatibility installer from " .. _G.installerCompatRef)
+		error("Could not download installer from " .. installerRef)
 	end
 
 	local file = fs.open("/EnergyMonitor/install/installer.lua", "w")
@@ -486,7 +502,7 @@ end
 
 function _G.doUpdate(toVer)
 	if autoUpdate == 1 then
-		downloadInstallerCompat()
+		downloadInstaller(toVer)
 		_G.showMonitorNotice(_G.language:getText("autoUpdateLineOne"), {
 			toVer,
 			_G.language:getText("autoUpdateLineTwo"),
@@ -537,7 +553,7 @@ function _G.doUpdate(toVer)
             if event == "key" then
 
                 if p1 == 90 or p1 == 98 then
-                    downloadInstallerCompat()
+                    downloadInstaller(toVer)
                     shell.run("/EnergyMonitor/install/installer.lua update "..toVer)
                     out = true
 					os.reboot()

@@ -217,7 +217,7 @@ local function backupDataDirectory()
   return nil
 end
 
-local function ensureDirectory(path)
+ensureDirectory = function(path)
   if path == nil or path == "" then
     return
   end
