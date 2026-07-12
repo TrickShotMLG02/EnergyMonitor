@@ -167,6 +167,8 @@ function updateOptionFile(option, value)
     fileSave.close()
 end
 
+local ensureDirectory
+
 local function backupDataDirectory()
   local dataDir = "/EnergyMonitor/data"
   local backupDir = "/EnergyMonitor_data_backup"
@@ -179,8 +181,36 @@ local function backupDataDirectory()
     fs.delete(backupDir)
   end
 
-  local ok = pcall(fs.move, dataDir, backupDir)
-  if ok and fs.exists(backupDir) then
+  local function copyTree(sourceDir, targetDir)
+    if not fs.exists(sourceDir) then
+      return
+    end
+
+    ensureDirectory(targetDir)
+
+    local entries = fs.list(sourceDir)
+    for _, entry in ipairs(entries) do
+      local sourcePath = sourceDir .. "/" .. entry
+      local targetPath = targetDir .. "/" .. entry
+
+      if fs.isDir(sourcePath) then
+        copyTree(sourcePath, targetPath)
+      else
+        local sourceFile = fs.open(sourcePath, "r")
+        if sourceFile ~= nil then
+          local targetFile = fs.open(targetPath, "w")
+          if targetFile ~= nil then
+            targetFile.write(sourceFile.readAll())
+            targetFile.close()
+          end
+          sourceFile.close()
+        end
+      end
+    end
+  end
+
+  copyTree(dataDir, backupDir)
+  if fs.exists(backupDir) then
     return backupDir
   end
 
@@ -213,13 +243,16 @@ local function restoreDirectoryContents(sourceDir, targetDir)
 
     if fs.isDir(sourcePath) then
       restoreDirectoryContents(sourcePath, targetPath)
-      pcall(fs.delete, sourcePath)
     else
-      if fs.exists(targetPath) then
-        pcall(fs.delete, targetPath)
+      local sourceFile = fs.open(sourcePath, "r")
+      if sourceFile ~= nil then
+        local targetFile = fs.open(targetPath, "w")
+        if targetFile ~= nil then
+          targetFile.write(sourceFile.readAll())
+          targetFile.close()
+        end
+        sourceFile.close()
       end
-
-      pcall(fs.move, sourcePath, targetPath)
     end
   end
 end
