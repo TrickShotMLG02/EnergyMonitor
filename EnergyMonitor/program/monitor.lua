@@ -254,48 +254,22 @@ checkMonitorUpdates = function()
         return
     end
 
-    local currBranch = ""
-    if string.find(_G.version, "beta") or string.find(_G.version, "development") then
-        currBranch = "development"
-    else
-        currBranch = "main"
-    end
-
-    local ok = pcall(_G.downloadFile, _G.repoUrl..currBranch.."/EnergyMonitor/", currBranch..".ver")
-    if not ok then
+    local currChannel = _G.getVersionChannel(_G.version)
+    if currChannel == nil then
         monitorUpdateAvailable = false
         updateVersionFooter()
         return
     end
 
-    local file = fs.open(currBranch..".ver", "r")
-    if file == nil then
-        monitorUpdateAvailable = false
-        updateVersionFooter()
-        return
-    end
-
-    local remoteVer = file.readLine()
-    file.close()
-    shell.run("rm "..currBranch..".ver")
-
+    local remoteVer = _G.fetchLatestRepositoryTag(currChannel)
     if remoteVer == nil then
         monitorUpdateAvailable = false
         updateVersionFooter()
         return
     end
 
-    local versionSeparator = string.find(_G.version, "-")
-    local remoteVersionSeparator = string.find(remoteVer, "-")
-    if versionSeparator == nil or remoteVersionSeparator == nil then
-        monitorUpdateAvailable = false
-        updateVersionFooter()
-        return
-    end
-
-    local vNum = string.sub(_G.version, 0, versionSeparator - 1)
-    local rvNum = string.sub(remoteVer, 0, remoteVersionSeparator - 1)
-    monitorUpdateAvailable = rvNum > vNum
+    local cmp = _G.compareRepositoryTags(remoteVer, _G.version)
+    monitorUpdateAvailable = cmp ~= nil and cmp > 0
     updateVersionFooter()
 end
 

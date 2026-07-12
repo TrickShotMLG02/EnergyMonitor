@@ -25,6 +25,16 @@ pastebin get gUbUpXHt git
 git
 ```
 
+The default install command fetches the latest stable tag. To install a beta or a specific release, use:
+
+```sh
+git beta
+git v1.7.4
+git v1.7.4.1
+git v1.7.4-beta
+git v1.7.4.1-beta
+```
+
 The installer will ask for:
 
 - Language
@@ -37,7 +47,7 @@ The installer will ask for:
 
 Use the same modem channel/port for every server, client, and monitor that should belong to the same EnergyMonitor network. The default channel is `5`.
 
-If you are installing from a fork, update `repoUrl` in `EnergyMonitor/install/github_downloader.lua` to point at your repository, upload that downloader to Pastebin, and use your own Pastebin code in the install command.
+If you are installing from a fork, update the repository owner/name constants in `EnergyMonitor/install/github_downloader.lua`, `EnergyMonitor/install/installer.lua`, and `EnergyMonitor/start/start.lua`. If you move the project off GitHub, also adjust the tag-list API URL in those scripts.
 
 ## Recommended Setup
 
@@ -168,15 +178,19 @@ Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks hig
 
 ## Updating
 
-The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates.
+The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates. Updates compare the stored tag against the latest semver tag in the same channel.
 
 ## Releases
 
-Release branches are handled separately:
+Versioning is tag-based:
 
-- `development` is the beta channel. Merge feature PRs here, then bump `EnergyMonitor/development.ver` in a separate commit when you want to publish a new beta.
-- `main` is the stable channel. Prepare the stable version bump on `development`, merge `development` into `main` when you are ready for a release, then let the bump land on `main` through the PR.
-- After a stable release, merge `main` back into `development` so both branches stay aligned.
+- Stable releases use tags like `v1.7.4` or `v1.7.4.1`.
+- Beta releases use tags like `v1.7.4-beta` or `v1.7.4.1-beta`.
+- Missing trailing parts are treated as zeros, so `v2.3`, `v2.3.0`, and `v2.3.0.0` compare the same way.
+- `v3` compares as `v3.0.0.0`.
+- To publish a release, commit the code and create the matching tag.
+- To publish a beta, tag the commit with the `-beta` suffix.
+- The installer can fetch the latest stable tag, the latest beta tag, or a specific tag directly.
 
 ## Contributing
 

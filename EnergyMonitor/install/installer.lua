@@ -8,7 +8,7 @@
 
 local arg = {... }
 local update
-local branch = ""
+local versionRef = ""
 --local repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
 local repoUrl = "https://cdn.jsdelivr.net/gh/TrickShotMLG02/EnergyMonitor@"
 local selectedLang = {}
@@ -16,21 +16,10 @@ local installLang = nil
 
 --Program arguments for updates
 if #arg == 0 then
-
-  --No update
-  update = false
-  branch = "main"
+  error("This installer requires a version tag argument")
 
 elseif #arg == 2 or #arg == 3 then
 
- --Select branch
- if arg[2] == "stable" then branch = "main"
- elseif arg[2] == "main" then branch = "main"
- elseif arg[2] == "development" then branch = "development"
- elseif arg[2] == "beta" then branch = "development"
- else
-   error("Invalid 2nd argument!")
- end
   if arg[1] == "update" then
     --Update!
     update = true
@@ -39,6 +28,7 @@ elseif #arg == 2 or #arg == 3 then
   else
     error("Invalid 1st argument!")
   end
+  versionRef = arg[2]
   if #arg == 3 then
     installLang = arg[3]
   end
@@ -47,7 +37,7 @@ else
 end
 
 --Url for file downloads
-local relUrl = repoUrl..branch.."/EnergyMonitor/"
+local relUrl = repoUrl..versionRef.."/EnergyMonitor/"
 
 --===== Functions =====
 
@@ -207,19 +197,7 @@ function getAllFiles()
 end
 
 function getVersion()
-  local fileData
-  if branch == "main" then
-    writeFile("main.ver")
-    fileData = fs.open("/EnergyMonitor/main.ver","r")
-  elseif branch == "development" then
-    writeFile("development.ver")
-    fileData = fs.open("/EnergyMonitor/development.ver","r")
-  end
-
-  local list = fileData.readAll()
-  fileData.close()
-
-  return string.gsub(string.gsub(list, "^%s+", ""), "%s+$", "")
+  return versionRef
 end
 
 function waitForEnter()

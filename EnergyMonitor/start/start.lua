@@ -22,7 +22,260 @@ _G.language = {}
 --===== Functions for loading and saving the options =====
 
 --_G.repoUrl = "https://raw.githubusercontent.com/TrickShotMLG02/EnergyMonitor/"
-_G.repoUrl = "https://cdn.jsdelivr.net/gh/TrickShotMLG02/EnergyMonitor@"
+_G.repoOwner = "TrickShotMLG02"
+_G.repoName = "EnergyMonitor"
+_G.repoUrl = "https://cdn.jsdelivr.net/gh/" .. _G.repoOwner .. "/" .. _G.repoName .. "@"
+_G.tagsApiUrl = "https://api.github.com/repos/" .. _G.repoOwner .. "/" .. _G.repoName .. "/tags"
+
+local function apiHeaders()
+	return {
+		["Accept"] = "application/vnd.github+json",
+		["X-GitHub-Api-Version"] = "2026-03-10",
+		["User-Agent"] = "EnergyMonitor"
+	}
+end
+
+local function stripVersionPrefix(tag)
+	if tag == nil then
+		return nil
+	end
+
+	tag = tostring(tag)
+	if tag:sub(1, 1) == "v" or tag:sub(1, 1) == "V" then
+		return tag:sub(2)
+	end
+
+	return tag
+end
+
+local function parseSemverTag(tag)
+	local normalized = stripVersionPrefix(tag)
+	if normalized == nil then
+		return nil
+	end
+
+	local core, prerelease = normalized:match("^([^%-]+)(%-.+)?$")
+	if core == nil then
+		return nil
+	end
+
+	local parts = {}
+	for part in tostring(core):gmatch("[^%.]+") do
+		if part:match("^%d+$") == nil then
+			return nil
+		end
+		table.insert(parts, tonumber(part))
+	end
+
+	if #parts < 1 or #parts > 4 then
+		return nil
+	end
+
+	while #parts < 4 do
+		table.insert(parts, 0)
+	end
+
+	return {
+		raw = tag,
+		core = parts,
+		prerelease = prerelease ~= nil and prerelease:sub(2) or nil
+	}
+end
+
+local function splitIdentifiers(value)
+	local parts = {}
+	if value == nil or value == "" then
+		return parts
+	end
+
+	for part in tostring(value):gmatch("[^.]+") do
+		table.insert(parts, part)
+	end
+
+	return parts
+end
+
+local function compareParsedTags(left, right)
+	local maxCount = math.max(#left.core, #right.core)
+	for i = 1, maxCount do
+		local leftPart = left.core[i] or 0
+		local rightPart = right.core[i] or 0
+
+		if leftPart < rightPart then
+			return -1
+		elseif leftPart > rightPart then
+			return 1
+		end
+	end
+
+	if left.prerelease == nil and right.prerelease == nil then
+		return 0
+	end
+
+	if left.prerelease == nil then
+		return 1
+	elseif right.prerelease == nil then
+		return -1
+	end
+
+	local leftParts = splitIdentifiers(left.prerelease)
+	local rightParts = splitIdentifiers(right.prerelease)
+	maxCount = math.max(#leftParts, #rightParts)
+
+	for i = 1, maxCount do
+		local leftPart = leftParts[i]
+		local rightPart = rightParts[i]
+
+		if leftPart == nil then
+			return -1
+		elseif rightPart == nil then
+			return 1
+		end
+
+		local leftNumber = tonumber(leftPart)
+		local rightNumber = tonumber(rightPart)
+		local cmp
+
+		if leftNumber ~= nil and rightNumber ~= nil then
+			if leftNumber < rightNumber then
+				cmp = -1
+			elseif leftNumber > rightNumber then
+				cmp = 1
+			else
+				cmp = 0
+			end
+		elseif leftNumber ~= nil then
+			cmp = -1
+		elseif rightNumber ~= nil then
+			cmp = 1
+		else
+			if leftPart < rightPart then
+				cmp = -1
+			elseif leftPart > rightPart then
+				cmp = 1
+			else
+				cmp = 0
+			end
+		end
+
+		if cmp ~= 0 then
+			return cmp
+		end
+	end
+
+	return 0
+end
+
+local function requestJson(url)
+	local response = http.get(url, apiHeaders())
+	if response == nil then
+		return nil
+	end
+
+	local body = response.readAll()
+	response.close()
+
+	local ok, data = pcall(textutils.unserializeJSON, body)
+	if not ok then
+		return nil
+	end
+
+	return data
+end
+
+local function fetchAllRepositoryTags()
+	local tags = {}
+	local page = 1
+
+	while true do
+		local data = requestJson(_G.tagsApiUrl .. "?per_page=100&page=" .. page)
+		if type(data) ~= "table" or #data == 0 then
+			break
+		end
+
+		for _, entry in ipairs(data) do
+			if type(entry) == "table" and type(entry.name) == "string" then
+				local parsed = parseSemverTag(entry.name)
+				if parsed ~= nil then
+					table.insert(tags, parsed)
+				end
+			end
+		end
+
+		if #data < 100 then
+			break
+		end
+
+		page = page + 1
+	end
+
+	return tags
+end
+
+local function selectLatestRepositoryTag(tags, channel)
+	local candidates = {}
+
+	for _, tag in ipairs(tags) do
+		local beta = tag.prerelease ~= nil
+		if channel == "beta" then
+			if beta then
+				table.insert(candidates, tag)
+			end
+		else
+			if not beta then
+				table.insert(candidates, tag)
+			end
+		end
+	end
+
+	table.sort(candidates, function(left, right)
+		return compareParsedTags(left, right) > 0
+	end)
+
+	if #candidates == 0 then
+		return nil
+	end
+
+	return candidates[1].raw
+end
+
+function _G.getVersionChannel(versionTag)
+	local parsed = parseSemverTag(versionTag)
+	if parsed == nil then
+		return nil
+	end
+
+	if parsed.prerelease == nil then
+		return "stable"
+	end
+
+	local prerelease = string.lower(parsed.prerelease)
+	if prerelease:find("beta") ~= nil or prerelease:find("development") ~= nil then
+		return "beta"
+	end
+
+	return "stable"
+end
+
+function _G.fetchLatestRepositoryTag(channel)
+	local tags = fetchAllRepositoryTags()
+	if type(tags) ~= "table" then
+		return nil
+	end
+
+	return selectLatestRepositoryTag(tags, channel)
+end
+
+function _G.compareRepositoryTags(leftTag, rightTag)
+	local left = parseSemverTag(leftTag)
+	local right = parseSemverTag(rightTag)
+
+	if left == nil or right == nil then
+		return nil
+	end
+
+	return compareParsedTags(left, right)
+end
 
 function  _G.debugOutput(message) 
 	if  _G.debugEnabled == 1 then
@@ -98,72 +351,34 @@ function _G.checkUpdates()
 		return
 	end
 
-	--Check current branch (release or beta)
-	local currBranch = ""
-
-	if string.find(version,"beta") or string.find(version, "development") then
-		currBranch = "development"
-	else
-		currBranch = "main"
+	local currChannel = _G.getVersionChannel(version)
+	if currChannel == nil then
+		print("Couldn't determine installed version channel. Skipping update check.")
+		return
 	end
 
-	--Get Remote version file
-	local success, ErrorStatement = pcall(downloadFile, repoUrl..currBranch.."/EnergyMonitor/",currBranch..".ver")
-	local tries = 1
-
-	-- Retry 10 times to get the remote version file otherwise continue
-	while not success do
-
-		if tries < 10 then 
-			-- used to prevent errors on server start due to computercraft http problems while server is starting
-			print("Couldn't get remote version from github. Retrying in 5 seconds...")
-			os.sleep(5)
-			success, ErrorStatement = pcall(downloadFile, repoUrl..currBranch.."/EnergyMonitor/",currBranch..".ver")
-			tries = tries + 1
-		else 
-			print("Couldn't get remote version from github. Continuing...")
-			return
-		end
-		
+	local remoteVer = _G.fetchLatestRepositoryTag(currChannel)
+	if remoteVer == nil then
+		print("Couldn't get remote tags from github. Continuing...")
+		return
 	end
-	
-	--downloadFile(repoUrl..currBranch.."/EnergyMonitor/",currBranch..".ver")
 
-	--Compare local and remote version
-	local file = fs.open(currBranch..".ver","r")
-	local remoteVer = file.readLine()
-	file.close()
-	
 	print("localVer: "..version)
-	
-    if remoteVer == nil then
-		print("Couldn't get remote version from gitlab.")
-	else
-		-- only used to check for update since eg. 1.1-XXX > 1.1.5-XXX
-		local versionSeparator = string.find(version, "-")
-		local remoteVersionSeparator = string.find(remoteVer, "-")
+	print("remoteVer: "..remoteVer)
 
-		if versionSeparator == nil or remoteVersionSeparator == nil then
-			print("Couldn't compare versions. Continuing...")
-			return
-		end
-
-		vNum = string.sub(version, 0, versionSeparator-1)
-		rvNum = string.sub(remoteVer, 0, remoteVersionSeparator-1)
-
-		print("remoteVer: "..remoteVer)
-		print("Update? -> "..tostring(rvNum > vNum))
-		
-	    --Update if available
-	    if rvNum > vNum then
-		    print("Update...")
-		    sleep(2)
-		    doUpdate(remoteVer,currBranch)
-	    end
+	local cmp = _G.compareRepositoryTags(remoteVer, version)
+	if cmp == nil then
+		print("Couldn't compare versions. Continuing...")
+		return
 	end
 
-	--Remove remote version file
-	shell.run("rm "..currBranch..".ver")
+	print("Update? -> "..tostring(cmp > 0))
+
+	if cmp > 0 then
+		print("Update...")
+		sleep(2)
+		doUpdate(remoteVer)
+	end
 end
 
 function _G.showMonitorNotice(title, lines)
@@ -208,7 +423,7 @@ function _G.showMonitorNotice(title, lines)
 	end
 end
 
-function _G.doUpdate(toVer,branch)
+function _G.doUpdate(toVer)
     if autoUpdate == 1 then
         _G.showMonitorNotice(_G.language:getText("autoUpdateLineOne"), {
             toVer,
@@ -244,7 +459,7 @@ function _G.doUpdate(toVer,branch)
     term.write(" -- 10 -- ")
 
 	if autoUpdate == 1 then
-		shell.run("/EnergyMonitor/install/installer.lua update "..branch)
+		shell.run("/EnergyMonitor/install/installer.lua update "..toVer)
 		os.reboot()
 		return
 	end
@@ -260,7 +475,7 @@ function _G.doUpdate(toVer,branch)
             if event == "key" then
 
                 if p1 == 90 or p1 == 98 then
-                    shell.run("/EnergyMonitor/install/installer.lua update "..branch)
+                    shell.run("/EnergyMonitor/install/installer.lua update "..toVer)
                     out = true
 					os.reboot()
                     break
@@ -289,7 +504,7 @@ function _G.doUpdate(toVer,branch)
 --
 end
 
---Download Files (For Remote version file)
+--Download Files
 function _G.downloadFile(relUrl,path)
 	local gotUrl = http.get(relUrl..path)
 	if gotUrl == nil then
@@ -375,7 +590,7 @@ _G.language = _G.newLanguageById(_G.lang)
 debugOutput("Initializing Network Devices")
 _G.initPeripherals()
 
--- check for updates in gitlab/github branch (NOT NEEDED)
+-- check for updates using repository tags
 debugOutput("Checking for Updates")
 checkUpdates()
 
