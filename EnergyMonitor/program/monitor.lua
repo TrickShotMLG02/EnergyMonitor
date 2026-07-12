@@ -608,7 +608,7 @@ setMonitorMode = function(mode)
 
     if noticeFrame ~= nil and noticeFrame.hide ~= nil then
         if historyMode then
-            noticeFrame:hide()
+            noticeFrame:show()
         elseif _G.receiveMessage ~= nil then
             -- default mode restores server notice on demand
         end
@@ -833,12 +833,11 @@ setupMonitor = function()
 end
 
 showServerNotice = function()
-    if historyMode then
-        return
-    end
-
     if noticeFrame ~= nil and noticeFrame.show ~= nil then
         noticeLineTwo:setText("Channel: " .. tostring(_G.modemChannel))
+        if noticeFrame.setZIndex ~= nil then
+            noticeFrame:setZIndex(70)
+        end
         noticeFrame:show()
     end
 end
