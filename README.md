@@ -47,6 +47,7 @@ The installer will ask for:
 - Transfer direction, when installing a transfer client
 - Modem channel/port
 - Stored energy history window in minutes
+- History save interval in seconds
 - Computer label
 - Startup installation
 
@@ -157,6 +158,7 @@ Important options:
 - `transferType`: `input`, `output`, `both`, or `n/a`
 - `modemChannel`: modem channel/port used by this EnergyMonitor network
 - `historyMinutes`: stored-energy history window shown on the monitor, from 1 to 120 minutes
+- `historySaveInterval`: how often the monitor saves the current history window, in seconds
 - `monitorOpenGraphOnStart`: open the graph view immediately when a monitor starts
 - `debug`: set to `1` for debug output
 

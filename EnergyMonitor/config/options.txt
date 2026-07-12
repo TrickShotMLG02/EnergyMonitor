@@ -7,6 +7,7 @@
   modemChannel = 5,
   pingInterval = 0.5,
   historyMinutes = 5,
+  historySaveInterval = 15,
   monitorOpenGraphOnStart = false,
   autoUpdate = 1,
   debug = 0
