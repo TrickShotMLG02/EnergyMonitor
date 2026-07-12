@@ -13,6 +13,13 @@ local repoUrl = "https://cdn.jsdelivr.net/gh/" .. repoOwner .. "/" .. repoName .
 local tagsApiUrl = "https://api.github.com/repos/" .. repoOwner .. "/" .. repoName .. "/tags"
 local installerCompatRef = "v2.0.0"
 local selectedLang = {}
+local debugGithubApi = false
+
+local function debugPrint(message)
+	if debugGithubApi then
+		print(message)
+	end
+end
 
 local function apiHeaders()
 	return {
@@ -25,18 +32,42 @@ end
 local function requestJson(url)
 	local response = http.get(url, apiHeaders())
 	if response == nil then
-		return nil
+		error("GitHub API request failed: " .. url)
 	end
 
+	local code = nil
+	if type(response.getResponseCode) == "function" then
+		code = response.getResponseCode()
+	end
 	local body = response.readAll()
 	response.close()
 
+	if code ~= nil and code ~= 200 then
+		error("GitHub API returned HTTP " .. tostring(code) .. " for " .. url .. ": " .. string.sub(body, 1, 120))
+	end
+
+	debugPrint("GitHub API URL: " .. url)
+	debugPrint("GitHub API raw: " .. string.sub(body, 1, 400))
+
 	local ok, data = pcall(textutils.unserializeJSON, body)
 	if not ok then
-		return nil
+		error("GitHub API response was not valid JSON for " .. url .. ": " .. string.sub(body, 1, 120))
+	end
+
+	debugPrint("GitHub API parsed type: " .. type(data))
+	if type(data) == "table" then
+		debugPrint("GitHub API parsed count: " .. tostring(#data))
 	end
 
 	return data
+end
+
+local function isArrayTable(value)
+	if type(value) ~= "table" then
+		return false
+	end
+
+	return value[1] ~= nil or next(value) == nil
 end
 
 local function stripVersionPrefix(tag)
@@ -44,7 +75,7 @@ local function stripVersionPrefix(tag)
 		return nil
 	end
 
-	tag = tostring(tag)
+	tag = tostring(tag):gsub("^%s+", ""):gsub("%s+$", "")
 	if tag:sub(1, 1) == "v" or tag:sub(1, 1) == "V" then
 		return tag:sub(2)
 	end
@@ -58,9 +89,15 @@ local function parseSemverTag(tag)
 		return nil
 	end
 
-	local core, prerelease = normalized:match("^([^%-]+)(%-.+)?$")
-	if core == nil then
-		return nil
+	local dashPos = normalized:find("-", 1, true)
+	local core = normalized
+	local prerelease = nil
+	if dashPos ~= nil then
+		core = normalized:sub(1, dashPos - 1)
+		prerelease = normalized:sub(dashPos + 1)
+		if prerelease == "" then
+			return nil
+		end
 	end
 
 	local parts = {}
@@ -179,15 +216,30 @@ local function fetchAllTags()
 
 	while true do
 		local data = requestJson(tagsApiUrl .. "?per_page=100&page=" .. page)
-		if type(data) ~= "table" or #data == 0 then
+		if type(data) ~= "table" then
+			break
+		end
+
+		if not isArrayTable(data) then
+			if type(data.message) == "string" then
+				error("GitHub API returned an error: " .. data.message)
+			end
+			error("GitHub API returned an unexpected JSON object from " .. tagsApiUrl)
+		end
+
+		if #data == 0 then
 			break
 		end
 
 		for _, entry in ipairs(data) do
 			if type(entry) == "table" and type(entry.name) == "string" then
+				debugPrint("GitHub tag entry: " .. entry.name)
 				local parsed = parseSemverTag(entry.name)
 				if parsed ~= nil then
+					debugPrint("GitHub tag parsed OK: " .. parsed.raw)
 					table.insert(tags, parsed)
+				else
+					debugPrint("GitHub tag rejected by parser: " .. entry.name)
 				end
 			end
 		end
@@ -198,6 +250,8 @@ local function fetchAllTags()
 
 		page = page + 1
 	end
+
+	debugPrint("GitHub parsed semver tags total: " .. tostring(#tags))
 
 	return tags
 end
@@ -238,7 +292,7 @@ local function resolveRequestedRef(requested)
 	if requested == nil or requested == "" or requested == "latest" or requested == "stable" or requested == "main" then
 		local latestStable = selectLatestTag(tags, "stable")
 		if latestStable == nil then
-			error("No stable semver tag found.")
+			error("No stable semver tag found. Parsed " .. tostring(#tags) .. " semver tag(s) from GitHub.")
 		end
 		return latestStable
 	end

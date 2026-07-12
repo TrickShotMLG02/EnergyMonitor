@@ -41,7 +41,7 @@ local function stripVersionPrefix(tag)
 		return nil
 	end
 
-	tag = tostring(tag)
+	tag = tostring(tag):gsub("^%s+", ""):gsub("%s+$", "")
 	if tag:sub(1, 1) == "v" or tag:sub(1, 1) == "V" then
 		return tag:sub(2)
 	end
@@ -55,9 +55,15 @@ local function parseSemverTag(tag)
 		return nil
 	end
 
-	local core, prerelease = normalized:match("^([^%-]+)(%-.+)?$")
-	if core == nil then
-		return nil
+	local dashPos = normalized:find("-", 1, true)
+	local core = normalized
+	local prerelease = nil
+	if dashPos ~= nil then
+		core = normalized:sub(1, dashPos - 1)
+		prerelease = normalized:sub(dashPos + 1)
+		if prerelease == "" then
+			return nil
+		end
 	end
 
 	local parts = {}
@@ -173,8 +179,16 @@ local function requestJson(url)
 		return nil
 	end
 
+	local code = nil
+	if type(response.getResponseCode) == "function" then
+		code = response.getResponseCode()
+	end
 	local body = response.readAll()
 	response.close()
+
+	if code ~= nil and code ~= 200 then
+		return nil
+	end
 
 	local ok, data = pcall(textutils.unserializeJSON, body)
 	if not ok then
@@ -184,13 +198,29 @@ local function requestJson(url)
 	return data
 end
 
+local function isArrayTable(value)
+	if type(value) ~= "table" then
+		return false
+	end
+
+	return value[1] ~= nil or next(value) == nil
+end
+
 local function fetchAllRepositoryTags()
 	local tags = {}
 	local page = 1
 
 	while true do
 		local data = requestJson(_G.tagsApiUrl .. "?per_page=100&page=" .. page)
-		if type(data) ~= "table" or #data == 0 then
+		if type(data) ~= "table" then
+			break
+		end
+
+		if not isArrayTable(data) then
+			return tags
+		end
+
+		if #data == 0 then
 			break
 		end
 
