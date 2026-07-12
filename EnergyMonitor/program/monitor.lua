@@ -500,7 +500,7 @@ pruneHistoryData = function()
     end
 end
 
-computeHistoryScale = function(points)
+computeHistoryScale = function(points, capacity)
     local minValue = nil
     local maxValue = nil
 
@@ -526,6 +526,11 @@ computeHistoryScale = function(points)
     local padding = math.max(range * historyScalePadding, math.max(1, math.abs(maxValue) * 0.05))
     minValue = math.max(0, minValue - padding)
     maxValue = maxValue + padding
+
+    local capacityValue = tonumber(capacity)
+    if capacityValue ~= nil and capacityValue == capacityValue and capacityValue > 0 then
+        maxValue = math.min(maxValue, capacityValue)
+    end
 
     if minValue ~= minValue or maxValue ~= maxValue then
         return 0, 1
@@ -640,7 +645,7 @@ drawHistoryPlot = function()
         return
     end
 
-    local scaleMin, scaleMax = computeHistoryScale(points)
+    local scaleMin, scaleMax = computeHistoryScale(points, maxEnergy)
     local scaleRange = math.max(1, scaleMax - scaleMin)
     local plotLeft = 2
     local plotTop = 2
@@ -805,7 +810,7 @@ updateHistoryOverlay = function()
         historyEtaLbl:setForeground(colors.white)
     end
 
-    local scaleMin, scaleMax = computeHistoryScale(historyData)
+    local scaleMin, scaleMax = computeHistoryScale(historyData, maxEnergy)
     local midValue = scaleMin + ((scaleMax - scaleMin) / 2)
     local minText = _G.numberToEnergyUnit(scaleMin)
     local midText = _G.numberToEnergyUnit(midValue)
