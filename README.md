@@ -31,8 +31,12 @@ The default install command fetches the latest stable tag. To install a beta or 
 git beta
 git v1.7.4
 git v1.7.4.1
+git v2
+git v2.3
+git v2.3.0.0
 git v1.7.4-beta
 git v1.7.4.1-beta
+git v2.3-beta
 ```
 
 The installer will ask for:
@@ -45,7 +49,9 @@ The installer will ask for:
 - Computer label
 - Startup installation
 
-Use the same modem channel/port for every server, client, and monitor that should belong to the same EnergyMonitor network. The default channel is `5`.
+Use the same modem channel/port for every server, client, and monitor that should belong to the same EnergyMonitor network. The default channel is `5`. On a server, changing the channel from the default is advisable if you are sharing a world with other players, since the default channel can interfere with other installations.
+
+Valid modem channels/ports are `0` through `65535`.
 
 If you are installing from a fork, update the repository owner/name constants in `EnergyMonitor/install/github_downloader.lua`, `EnergyMonitor/install/installer.lua`, and `EnergyMonitor/start/start.lua`. If you move the project off GitHub, also adjust the tag-list API URL in those scripts.
 
@@ -180,9 +186,11 @@ Use a larger attached monitor. A size of at least 4 blocks wide and 2 blocks hig
 
 ## Updating
 
-The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates. Updates compare the stored tag against the latest semver tag in the same channel.
+The program can auto-update when enabled in `options.txt`. Existing configuration is preserved during updates. On restart, EnergyMonitor reads the installed tag from `options.txt`, determines whether it is a stable or beta release, and compares it against the latest matching tag in that channel.
 
 If an older installation updates through the new flow, the runtime downloads the `v2.0.0` installer before applying the newer tagged release.
+
+Installations from before `v2.0.0` may no longer update cleanly through the new tag-based flow. In that case, reinstall the program and re-run the Pastebin bootstrap command to refresh the downloader.
 
 ## Releases
 
