@@ -29,6 +29,7 @@ local historySampleSeconds = math.max(1, historyMinutes * 60)
 local historyScalePadding = 0.1
 local historyMode = false
 local historyData = {}
+local historyHasServerData = false
 
 local displayFilter = {
     showDisconnected = true,
@@ -252,6 +253,7 @@ listen = function()
 
             -- calculate if the energy storage is being charged or discharged
             effectiveRate = inputRate - outputRate
+            historyHasServerData = true
             sampleHistoryPoint()
 			
 			-- sort the transferrers that are displayed on screen based on filters
@@ -398,6 +400,10 @@ computeHistoryScale = function(points)
 end
 
 sampleHistoryPoint = function()
+    if not historyHasServerData then
+        return
+    end
+
     local now = os.clock()
     if #historyData > 0 and now - historyData[#historyData].time < 1 then
         return
@@ -604,22 +610,7 @@ updateHistoryOverlay = function()
     end
 
     if historyDebugLbl ~= nil and historyDebugLbl.setText ~= nil then
-        local pointCount = #historyData
-        local plotSize = "n/a"
-        if historyPlot ~= nil and historyPlot.getSize ~= nil then
-            local w, h = historyPlot:getSize()
-            plotSize = tostring(w) .. "x" .. tostring(h)
-        end
-        if pointCount > 0 then
-            local firstPoint = historyData[1]
-            historyDebugLbl:setText(
-                "plot " .. plotSize ..
-                " points " .. tostring(pointCount) ..
-                " first " .. _G.numberToEnergyUnit(tonumber(firstPoint and firstPoint.value) or 0)
-            )
-        else
-            historyDebugLbl:setText("plot " .. plotSize .. " points 0 first n/a")
-        end
+        historyDebugLbl:setText("")
     end
 
     local scaleMin, scaleMax = computeHistoryScale(historyData)
@@ -685,7 +676,7 @@ setupMonitor = function()
         :setTextAlign("left")
         :setForeground(colors.lime)
     historyDebugLbl = historyHeader:addLabel()
-        :setText("plot n/a points 0")
+        :setText("")
         :setSize("parent.w-14", 1)
         :setPosition(1, 2)
         :setTextAlign("left")
@@ -727,8 +718,8 @@ setupMonitor = function()
         :setForeground(colors.white)
     historyTimeLbl = historyView:addLabel()
         :setText("Time")
-        :setSize("parent.w", 1)
-        :setPosition(1, "parent.h-2")
+        :setSize("parent.w-18", 1)
+        :setPosition(2, "parent.h-1")
         :setTextAlign("center")
         :setForeground(colors.gray)
     historyPlot:addPostDraw("history-plot", function()
