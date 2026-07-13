@@ -19,7 +19,7 @@ A server collects readings from client computers and broadcasts the combined dat
 - Uses wireless modems for communication.
 - Uses three roles: `server`, `client`, and `monitor`.
 - Supports energy storage clients and transfer-rate clients.
-- Includes support for Mekanism, Draconic Evolution, Powah, Advanced Peripherals, Energy Meter, and generic energy peripherals.
+- Includes support for Mekanism, Draconic Evolution, Powah, Advanced Peripherals, Energy Meter, Flux Networks through FNCCT, and generic energy peripherals.
 - Installs from Pastebin and tagged GitHub/jsDelivr releases.
 - Checks for updates on startup and can install them automatically when enabled in `options.txt`.
 - The monitor's `Graph` button opens the stored-energy graph.
@@ -139,6 +139,7 @@ Supported mods and integrations:
 - Powah
 - Advanced Peripherals
 - Energy Meter
+- Flux Networks through [FNCCT](https://github.com/TrickShotMLG02/FNCCT)
 - Generic ComputerCraft-compatible energy peripherals
 
 Supported peripheral types:
@@ -148,12 +149,16 @@ Supported peripheral types:
 - Mekanism energy devices, including induction ports
 - Advanced Peripherals Energy Detector
 - Energy Meter peripherals
+- FNCCT Flux Networks flux plugs and flux points
+- FNCCT Flux Networks controller, which can publish all flux plugs and flux points in the controller network from one client computer
 - Draconic Evolution energy core storage
 - Draconic Evolution energy core transfer
 - Draconic Evolution flux gates
 - Powah energy cells and ender cells
 
 Some peripherals can act as either storage or transfer devices. For example, Mekanism induction ports can be installed as storage clients or transfer clients. The client installer choice determines which wrapper EnergyMonitor uses.
+
+Flux Networks support requires [FNCCT](https://github.com/TrickShotMLG02/FNCCT/tree/master). Build and install that mod in the modpack before using Flux Networks plugs, points, or controllers with EnergyMonitor.
 
 ---
 

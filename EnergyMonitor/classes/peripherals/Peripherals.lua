@@ -50,6 +50,21 @@ local function isMekanismEnergyType(periType)
         or peripheralTypeContains(periType, "EnergyCube")
 end
 
+local function isFluxNetworkPlug(periType)
+    return periType == "flux_plug"
+        or periType == "fluxnetworks:flux_plug"
+end
+
+local function isFluxNetworkController(periType)
+    return periType == "flux_controller"
+        or periType == "fluxnetworks:flux_controller"
+end
+
+local function isFluxNetworkPoint(periType)
+    return periType == "flux_point"
+        or periType == "fluxnetworks:flux_point"
+end
+
 local function newPeripheralContext(name, periType, peri)
     return {
         name = name,
@@ -154,6 +169,36 @@ _G.registerEnergyTransferSupport({
     end,
     create = function(ctx)
         return newEnergyMeter("em0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "Flux Networks Controller",
+    matches = function(ctx)
+        return isFluxNetworkController(ctx.type)
+    end,
+    create = function(ctx)
+        return newFluxNetworkTransfer("fn0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType, "controller")
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "Flux Networks Flux Plug",
+    matches = function(ctx)
+        return isFluxNetworkPlug(ctx.type)
+    end,
+    create = function(ctx)
+        return newFluxNetworkTransfer("fn0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType, "plug")
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "Flux Networks Flux Point",
+    matches = function(ctx)
+        return isFluxNetworkPoint(ctx.type)
+    end,
+    create = function(ctx)
+        return newFluxNetworkTransfer("fn0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType, "point")
     end
 })
 
