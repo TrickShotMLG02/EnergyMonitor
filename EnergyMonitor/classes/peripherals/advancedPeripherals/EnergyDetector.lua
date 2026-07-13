@@ -1,4 +1,7 @@
--- EnergyDetector (Inheriting from EnergyTransfer)
+-- EnergyMonitor Advanced Peripherals Energy Detector wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- EnergyMonitor-specific transfer support following the local transfer wrapper pattern.
+
 local EnergyDetector = setmetatable({
     transferRateInput = function(self)
         if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then

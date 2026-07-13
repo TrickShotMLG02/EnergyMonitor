@@ -1,4 +1,7 @@
--- EnergyTransfer Base Class
+-- EnergyMonitor Draconic Evolution flux gate transfer wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- EnergyMonitor-specific transfer support following the local transfer wrapper pattern.
+
 local DraconicFluxGateEnergyTransfer = setmetatable({
     -- Basic Methods
     transferRateInput = function(self)

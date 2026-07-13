@@ -1,6 +1,8 @@
--- Extreme Reactors Control by SeekerOfHonjo --
--- Original work by Thor_s_Crafter on https://github.com/ThorsCrafter/Reactor-and-Turbine-control-program --
--- Init Program Downloader (GitHub tags) --
+-- EnergyMonitor bootstrap downloader.
+-- EnergyMonitor implementation Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- The bootstrap/downloader flow was adapted from ExtremeReactorControl
+-- by SeekerOfHonjo at commit f0f223ec, which itself descends from
+-- Reactor-and-Turbine-control-program by Thor_s_Crafter.
 
 --===== Local variables =====
 

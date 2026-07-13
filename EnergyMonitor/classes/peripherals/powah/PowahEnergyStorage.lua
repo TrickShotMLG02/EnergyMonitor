@@ -1,7 +1,7 @@
--- Reactor / Turbine Control
--- (c) 2021 SeekerOfHonjo
--- Version 2.0
--- https://gitlab.com/seekerscomputercraft/extremereactorcontrol/-/blob/main/classes/base/EnergyStorage.lua?ref_type=heads
+-- EnergyMonitor Powah energy storage wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This is new EnergyMonitor mod support, implemented using the EnergyMonitor
+-- storage wrapper pattern adapted from ExtremeReactorControl at commit f0f223ec.
 
 local PowahEnergyStorage = {
     name = "",

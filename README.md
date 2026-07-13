@@ -319,6 +319,21 @@ To publish a release, commit the code and create the matching tag. To publish a 
 
 ---
 
+## License
+
+EnergyMonitor is licensed under the MIT License. See [LICENSE](LICENSE).
+
+Parts of this project were originally derived from MIT-licensed ComputerCraft reactor control projects:
+
+- [ExtremeReactorControl](https://gitlab.com/seekerscomputercraft/extremereactorcontrol) by SeekerOfHonjo, primarily from the March 11, 2024 tree at commit `f0f223ec`
+- [Reactor-and-Turbine-control-program](https://github.com/ThorsCrafter/Reactor-and-Turbine-control-program) by Thor_s_Crafter
+
+Several files have since been heavily rewritten for EnergyMonitor, while some helper classes, installer/startup structure, transport message wrappers, and peripheral wrapper patterns still carry upstream lineage. The root license file keeps the required MIT notices for those portions.
+
+EnergyMonitor also bundles the third-party Basalt UI library in `EnergyMonitor/program/basalt.lua`. Basalt is MIT-licensed by Robert Jelic / Pyroxenium. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the bundled Basalt notice and license text.
+
+---
+
 ## Contributing
 
 Contributions are welcome, especially support for more energy peripherals, monitor UI improvements, installer improvements, and bug fixes.

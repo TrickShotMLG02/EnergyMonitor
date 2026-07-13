@@ -1,4 +1,7 @@
--- EnergyTransfer Base Class
+-- EnergyMonitor energy transfer base wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- Implemented for EnergyMonitor using the same wrapper style as the storage base.
+
 local EnergyTransfer = {
     name = "",
     id = {},

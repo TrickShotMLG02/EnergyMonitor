@@ -1,4 +1,7 @@
--- EnergyTransfer Base Class
+-- EnergyMonitor Draconic Evolution energy core transfer wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- EnergyMonitor-specific transfer support following the local transfer wrapper pattern.
+
 local DraconicCoreEnergyTransfer = setmetatable({
     -- Basic Methods
     transferRateInput = function(self)

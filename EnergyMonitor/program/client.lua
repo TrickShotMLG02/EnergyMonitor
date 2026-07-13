@@ -1,3 +1,6 @@
+-- EnergyMonitor client program.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+
 print("THIS IS THE CLIENT PROGRAM!")
 print("Waiting for server ping...")
 print("Listening on modem channel: " .. tostring(_G.modemChannel))

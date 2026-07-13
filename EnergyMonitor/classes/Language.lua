@@ -1,6 +1,6 @@
--- Reactor / Turbine Control
--- (c) 2021 SeekerOfHonjo
--- Version 2.0
+-- EnergyMonitor language helper.
+-- EnergyMonitor modifications Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This helper is adapted from ExtremeReactorControl by SeekerOfHonjo at commit f0f223ec.
 
 local Language = {
     text = {},

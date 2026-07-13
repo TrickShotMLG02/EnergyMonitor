@@ -1,7 +1,9 @@
--- Reactor / Turbine Control
--- (c) 2017 Thor_s_Crafter
--- Version 3.0
--- https://gitlab.com/seekerscomputercraft/extremereactorcontrol/-/blob/main/classes/Peripherals.lua?ref_type=heads
+-- EnergyMonitor peripheral registry and setup.
+-- EnergyMonitor implementation Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- The peripheral discovery/setup structure began from ExtremeReactorControl
+-- by SeekerOfHonjo at commit f0f223ec, which itself descends from
+-- Reactor-and-Turbine-control-program by Thor_s_Crafter. The registry-based
+-- storage/transfer support system is EnergyMonitor-specific.
 
 
 --Peripherals

@@ -1,7 +1,6 @@
--- Reactor / Turbine Control
--- (c) 2021 SeekerOfHonjo
--- Version 2.0
--- https://gitlab.com/seekerscomputercraft/extremereactorcontrol/-/blob/main/classes/mekanism/MekanismEnergyStorage.lua?ref_type=heads
+-- EnergyMonitor Mekanism energy storage wrapper.
+-- EnergyMonitor modifications Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This wrapper is adapted from ExtremeReactorControl by SeekerOfHonjo at commit f0f223ec.
 
 local MekanismEnergyStorage = setmetatable({
     useGetEnergy = false,    

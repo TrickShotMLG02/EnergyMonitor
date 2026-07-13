@@ -1,7 +1,6 @@
--- Reactor / Turbine Control
--- (c) 2021 SeekerOfHonjo
--- Version 2.0
--- https://gitlab.com/seekerscomputercraft/extremereactorcontrol/-/blob/main/classes/base/EnergyStorage.lua?ref_type=heads
+-- EnergyMonitor energy storage base wrapper.
+-- EnergyMonitor modifications Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This base wrapper is adapted from ExtremeReactorControl by SeekerOfHonjo at commit f0f223ec.
 
 local EnergyStorage = {
     name = "",
