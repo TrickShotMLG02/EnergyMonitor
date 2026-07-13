@@ -19,6 +19,7 @@ A server collects readings from client computers and broadcasts the combined dat
 - Uses wireless modems for communication.
 - Uses three roles: `server`, `client`, and `monitor`.
 - Supports energy storage clients and transfer-rate clients.
+- Includes support for Mekanism, Draconic Evolution, Powah, Advanced Peripherals, Energy Meter, and generic energy peripherals.
 - Installs from Pastebin and tagged GitHub/jsDelivr releases.
 - Checks for updates on startup and can install them automatically when enabled in `options.txt`.
 - The monitor's `Graph` button opens the stored-energy graph.
@@ -121,7 +122,16 @@ The monitor displays aggregated server data on an attached monitor. It can show 
 
 ## Supported Peripherals
 
-Built-in support includes:
+Supported mods and integrations:
+
+- Mekanism
+- Draconic Evolution
+- Powah
+- Advanced Peripherals
+- Energy Meter
+- Generic ComputerCraft-compatible energy peripherals
+
+Supported peripheral types:
 
 - Generic energy storage peripherals with methods such as `getEnergyStored` and `getMaxEnergyStored`
 - Generic transfer peripherals with methods such as `getEnergyTransferInput`, `getTransferRateInput`, or `getTransferRateOutput`
@@ -302,6 +312,7 @@ Please make pull requests easy to review:
 - Keep each pull request focused on one purpose.
 - Document user-facing changes in this README when setup, configuration, supported peripherals, or troubleshooting changes.
 - Add new downloaded files to `EnergyMonitor/files.txt`; otherwise the installer will not fetch them.
+- Add newly supported mods or integrations to the supported peripherals list in this README.
 - Describe what changed in the PR description and mention why the change is needed.
 - Include how you tested the change, for example the ComputerCraft role, attached peripheral type, modem channel, and monitor UI state.
 - Include screenshots for monitor UI changes when possible.
