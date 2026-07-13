@@ -643,6 +643,9 @@ function initClasses()
 	-- Energy Meters Mod Support
 	shell.run(periPath.."energyMeter/EnergyMeter.lua")
 
+	-- Flux Networks Mod Support
+	shell.run(periPath.."fluxNetworks/FluxNetworkTransfer.lua")
+
 	-- Mekanism Mod Support
     shell.run(periPath.."mekanism/MekanismEnergyStorage.lua")
 	shell.run(periPath.."mekanism/MekanismEnergyTransfer.lua")

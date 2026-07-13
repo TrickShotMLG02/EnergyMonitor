@@ -90,6 +90,52 @@ local function addClient(client)
     end
 end
 
+local function updateClientFromPeripheralData(peripheralType, data, clock)
+    if type(data) ~= "table" or data.id == nil then
+        return
+    end
+
+    if peripheralType == _G.MessageDataPeripheral.Transfer then
+        data.transferIn = tonumber(data.transferIn) or 0
+        data.transferOut = tonumber(data.transferOut) or 0
+        data.transferType = data.transferType or _G.TransferType.Both
+    end
+
+    local client = {}
+    setmetatable(client, {__index = clientInfo})
+
+    client.id = data.id
+    client.name = data.name
+    client.data = data
+    client.type = peripheralType
+    client.lastPing = clock
+
+    addClient(client)
+
+    if debugPrint then
+        term.redirect(_G.controlMonitor)
+        term.clear()
+        term.setCursorPos(1,1)
+        print(clock)
+        print("Type: " .. _G.parsePeripheralType(peripheralType))
+    end
+
+    if peripheralType == _G.MessageDataPeripheral.Transfer then
+        debugOutput("Client: "..data.name)
+        debugOutput("ID: "..data.id)
+        debugOutput("Transfer In: "..data.transferIn)
+        debugOutput("Transfer Out: "..data.transferOut)
+        debugOutput("Status: "..data.status)
+    elseif peripheralType == _G.MessageDataPeripheral.Capacitor then
+        debugOutput("Client: "..data.name)
+        debugOutput("ID: "..data.id)
+        debugOutput("Energy: "..data.energy)
+        debugOutput("MaxEnergy: "..data.maxEnergy)
+        debugOutput("Filled: "..math.floor(data.energy / data.maxEnergy * 100) .. "%")
+        debugOutput("Status: "..data.status)
+    end
+end
+
 -- remove all clients that did not respond in last x seconds
 local function dropNotRespondingClients()
     -- remove client from connectedClients if lastPing is older than timeout
@@ -143,48 +189,15 @@ local function listen()
             sender = _G.Sender.Client,
             recipient = _G.Sender.Server
         })
-        local client = {}
-        setmetatable(client, {__index = clientInfo})
-
-        if msg.data ~= nil and msg.data.peripheralData ~= nil then
-
-            -- extract data from message and setup clientInfo
-            local data = msg.data.peripheralData
-            client.id = data.id
-            client.name = data.name
-            client.data = data
-            client.type = msg.data.peripheral
-            client.lastPing = clock
-
-            -- set client as connected if not already done
-            addClient(client)
-
-            if debugPrint then
-                term.redirect(_G.controlMonitor)
-                term.clear()
-                term.setCursorPos(1,1)
-                print(clock)
-                print("Type: " .. _G.parsePeripheralType(msg.data.peripheral))
-            end
-            
-            if msg.data.peripheral == _G.MessageDataPeripheral.Transfer then
-
-                -- data received is from a transferrer, print its values on debug
-                debugOutput("Client: "..data.name)
-                debugOutput("ID: "..data.id)
-                debugOutput("Transfer In: "..data.transferIn)
-                debugOutput("Transfer In: "..data.transferOut)
-                --debugOutput("Mode: "..data.mode)
-                debugOutput("Status: "..data.status)
-            elseif msg.data.peripheral == _G.MessageDataPeripheral.Capacitor then
-
-                -- data received is from a capacitor, print its values on debug
-                debugOutput("Client: "..data.name)
-                debugOutput("ID: "..data.id)
-                debugOutput("Energy: "..data.energy)
-                debugOutput("MaxEnergy: "..data.maxEnergy)
-                debugOutput("Filled: "..math.floor(data.energy / data.maxEnergy * 100) .. "%")
-                debugOutput("Status: "..data.status)
+        if msg.data ~= nil then
+            if type(msg.data.peripheralDataList) == "table" then
+                for _, data in ipairs(msg.data.peripheralDataList) do
+                    if type(data) == "table" then
+                        updateClientFromPeripheralData(msg.data.peripheral, data, clock)
+                    end
+                end
+            elseif msg.data.peripheralData ~= nil then
+                updateClientFromPeripheralData(msg.data.peripheral, msg.data.peripheralData, clock)
             end
 
             -- debug print internal state of data structures
