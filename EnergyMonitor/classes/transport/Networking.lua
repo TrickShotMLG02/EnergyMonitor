@@ -1,3 +1,8 @@
+-- EnergyMonitor networking and message helpers.
+-- EnergyMonitor implementation Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This file is now EnergyMonitor-specific. Its earliest ancestor was the small
+-- ExtremeReactorControl transport wrapper by SeekerOfHonjo at commit f0f223ec.
+
 local PROTOCOL = "EnergyMonitor"
 local PROTOCOL_VERSION = 1
 

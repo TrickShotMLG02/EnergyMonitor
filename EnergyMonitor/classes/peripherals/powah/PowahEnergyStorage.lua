@@ -1,19 +1,20 @@
--- EnergyMonitor energy storage base wrapper.
--- EnergyMonitor modifications Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
--- This base wrapper is adapted from ExtremeReactorControl by SeekerOfHonjo at commit f0f223ec.
+-- EnergyMonitor Powah energy storage wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This is new EnergyMonitor mod support, implemented using the EnergyMonitor
+-- storage wrapper pattern adapted from ExtremeReactorControl at commit f0f223ec.
 
-local EnergyStorage = {
+local PowahEnergyStorage = {
     name = "",
     id = {},
     side = "",
     type = "",
-    
+
     -- overwrite these functions in specific mod support implementations with the corresponding api function
     energy = function(self)
-        return _G.callPeripheralMethod(self.id, "getEnergyStored", 0)
+        return _G.callPeripheralMethod(self.id, "getEnergy", 0)
     end,
     capacity = function(self)
-        return _G.callPeripheralMethod(self.id, "getMaxEnergyStored", 0)
+        return _G.callPeripheralMethod(self.id, "getEnergyCapacity", 0)
     end,
     percentage = function(self)
         local capacity = self:capacity()
@@ -31,11 +32,11 @@ local EnergyStorage = {
     end
 }
 
-function _G.newEnergyStorage(name, id, side, type)
-    print("Creating new Base Energy Storage")
+function _G.newPowahEnergyStorage(name, id, side, type)
+    print("Creating new Powah Energy Storage")
     local storage = {}
-    setmetatable(storage,{__index=EnergyStorage})
-    
+    setmetatable(storage,{__index=PowahEnergyStorage})
+
     if id == nil then
         print("MISSING wrapped peripheral object. This is going to break!")
     end
@@ -47,12 +48,3 @@ function _G.newEnergyStorage(name, id, side, type)
 
     return storage
 end
-
-function _G.printEnergyStorageData(storage)
-    print("Name: "..storage.name)
-    print("ID: "..tostring(storage.id))
-    print("Energy: "..storage:energy())
-    print("Capacity: "..storage:capacity())
-    print("Fill: "..storage:percentage().."%")
-end
-

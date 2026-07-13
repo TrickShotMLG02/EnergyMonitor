@@ -1,4 +1,7 @@
--- EnergyMeter (Inheriting from EnergyTransfer)
+-- EnergyMonitor Energy Meter wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- EnergyMonitor-specific transfer support following the local transfer wrapper pattern.
+
 local EnergyMeter = setmetatable({
     -- Methods specific to EnergyMeter
     --[[

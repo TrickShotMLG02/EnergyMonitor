@@ -1,3 +1,8 @@
+-- EnergyMonitor utility helpers.
+-- EnergyMonitor implementation Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- Most helpers in this file are EnergyMonitor-specific; the number-formatting helper
+-- lineage comes from ExtremeReactorControl by SeekerOfHonjo at commit f0f223ec.
+
 -- function to convert a decimal number
 function formatNumberComma(number)
     local finalOutput =  format_int(number)

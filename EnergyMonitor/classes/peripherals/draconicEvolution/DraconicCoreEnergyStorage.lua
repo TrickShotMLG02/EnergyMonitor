@@ -1,7 +1,7 @@
--- Reactor / Turbine Control
--- (c) 2021 SeekerOfHonjo
--- Version 2.0
--- https://gitlab.com/seekerscomputercraft/extremereactorcontrol/-/blob/main/classes/mekanism/MekanismEnergyStorage.lua?ref_type=heads
+-- EnergyMonitor Draconic Evolution energy storage wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- This EnergyMonitor wrapper follows the storage wrapper pattern adapted from
+-- ExtremeReactorControl at commit f0f223ec, with Draconic-specific behavior.
 
 local DraconicEnergyStorage = setmetatable({
     useGetEnergy = false,

@@ -1,3 +1,6 @@
+-- EnergyMonitor server program.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+
 local timeout = 5
 local clientInfo = {
     id = "",

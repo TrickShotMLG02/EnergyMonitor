@@ -1,3 +1,6 @@
+-- EnergyMonitor monitor program.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+
 local basalt = require("basalt")
 
 local displayData = {

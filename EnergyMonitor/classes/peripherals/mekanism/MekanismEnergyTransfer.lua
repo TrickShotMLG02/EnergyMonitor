@@ -1,4 +1,7 @@
--- EnergyTransfer Base Class
+-- EnergyMonitor Mekanism energy transfer wrapper.
+-- Copyright (c) 2026 TrickShotMLG02. Licensed under the MIT License.
+-- EnergyMonitor-specific transfer support following the local transfer wrapper pattern.
+
 local MekanismEnergyTransfer = setmetatable({
     successGetLastInput = false,
     successGetLastOutput = false,

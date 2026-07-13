@@ -17,6 +17,7 @@
       "classes/peripherals/energyMeter/EnergyMeter.lua",
       "classes/peripherals/mekanism/MekanismEnergyStorage.lua",
       "classes/peripherals/mekanism/MekanismEnergyTransfer.lua",
+      "classes/peripherals/powah/PowahEnergyStorage.lua",
       "classes/peripherals/Peripherals.lua",
       "classes/transport/Networking.lua",
       "classes/Language.lua",
