@@ -42,14 +42,10 @@ function _G.newEnergyDetector(name, id, side, type, transferType)
     return detector
 end
 
-function _G.printEnergyDetectorData(detector)
+function EnergyDetector:printEnergyTransferData()
     print("Name: "..detector.name)
     print("ID: "..tostring(detector.id))
     print("Transfer Rate Input: "..tostring(detector:transferRateInput()))
     print("Transfer Rate Output: "..tostring(detector:transferRateOutput()))
     print("Transfer Rate Limit: "..tostring(detector:transferRateLimit()))
-end
-
-function EnergyDetector:printEnergyTransferData()
-    _G.printEnergyDetectorData(self)
 end

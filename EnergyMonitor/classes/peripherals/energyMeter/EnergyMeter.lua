@@ -86,7 +86,7 @@ function _G.newEnergyMeter(name, id, side, type, transferType)
     return meter
 end
 
-function _G.printEnergyMeterData(meter)
+function EnergyMeter:printEnergyTransferData()
     print("Name: "..meter.name)
     print("ID: "..tostring(meter.id))
     --print("Status: "..tostring(meter:status()))
