@@ -55,6 +55,11 @@ local function isFluxNetworkPlug(periType)
         or periType == "fluxnetworks:flux_plug"
 end
 
+local function isFluxNetworkController(periType)
+    return periType == "flux_controller"
+        or periType == "fluxnetworks:flux_controller"
+end
+
 local function isFluxNetworkPoint(periType)
     return periType == "flux_point"
         or periType == "fluxnetworks:flux_point"
@@ -164,6 +169,16 @@ _G.registerEnergyTransferSupport({
     end,
     create = function(ctx)
         return newEnergyMeter("em0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType)
+    end
+})
+
+_G.registerEnergyTransferSupport({
+    label = "Flux Networks Controller",
+    matches = function(ctx)
+        return isFluxNetworkController(ctx.type)
+    end,
+    create = function(ctx)
+        return newFluxNetworkTransfer("fn0", ctx.peripheral, ctx.name, ctx.type, ctx.transferType, "controller")
     end
 })
 

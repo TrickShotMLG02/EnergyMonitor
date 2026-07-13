@@ -40,6 +40,32 @@ local function printPeripheralData(wrapper, wrapperPrintMethod, fallbackPrintFun
     fallbackPrintFunction(wrapper)
 end
 
+local function createTransferData(wrapper)
+    local computerLabel = os.getComputerLabel()
+
+    if wrapper ~= nil and type(wrapper.peripheralDataList) == "function" then
+        local success, dataList = pcall(function()
+            return wrapper:peripheralDataList(computerLabel)
+        end)
+
+        if success and type(dataList) == "table" then
+            return nil, dataList
+        end
+    end
+
+    local peripheralData = {}
+    setmetatable(peripheralData,{__index = _G.TransferData})
+    peripheralData.name = getPeripheralDisplayName(wrapper)
+    peripheralData.id = tostring(wrapper.id)
+    peripheralData.transferIn = wrapper:transferRateInput()
+    peripheralData.transferOut = wrapper:transferRateOutput()
+    peripheralData.transferType = _G.transferType
+    -- TODO: set appropriate status (DISCONNECTED when no energy is transferred)
+    peripheralData.status = "N/A"
+
+    return peripheralData, nil
+end
+
 while true do
     -- Receive ping from server
     local msg = _G.receiveMessage({
@@ -71,18 +97,11 @@ while true do
 
         local peripheral = nil
         local peripheralData = {}
+        local peripheralDataList = nil
         if _G.transferrer ~= nil then
             -- Client is a transferrer
             peripheral = _G.MessageDataPeripheral.Transfer
-            -- use peripheral data as transfer data structure
-            setmetatable(peripheralData,{__index = _G.TransferData})
-            peripheralData.name = getPeripheralDisplayName(_G.transferrer)
-            peripheralData.id = tostring(_G.transferrer.id)
-            peripheralData.transferIn = _G.transferrer:transferRateInput()
-            peripheralData.transferOut = _G.transferrer:transferRateOutput()
-            peripheralData.transferType = _G.transferType
-            -- TODO: set appropriate status (DISCONNECTED when no energy is transferred)
-            peripheralData.status = "N/A"
+            peripheralData, peripheralDataList = createTransferData(_G.transferrer)
             
             -- print data structure to computer screen
             printPeripheralData(_G.transferrer, "printEnergyTransferData", _G.printEnergyTransferData)
@@ -104,7 +123,8 @@ while true do
         if peripheral ~= nil then
             data = {
                 peripheral = peripheral,
-                peripheralData = peripheralData
+                peripheralData = peripheralData,
+                peripheralDataList = peripheralDataList
             }
 
             -- send data as update to server

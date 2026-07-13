@@ -150,6 +150,7 @@ Supported peripheral types:
 - Advanced Peripherals Energy Detector
 - Energy Meter peripherals
 - FNCCT Flux Networks flux plugs and flux points
+- FNCCT Flux Networks controller, which can publish all flux plugs and flux points in the controller network from one client computer
 - Draconic Evolution energy core storage
 - Draconic Evolution energy core transfer
 - Draconic Evolution flux gates
