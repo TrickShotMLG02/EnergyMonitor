@@ -10,6 +10,10 @@ local EnergyTransfer = {
     status = "",
 
     -- overwrite these functions in specific mod support implementations with the corresponding api function
+    displayName = function(self, computerLabel)
+        return computerLabel
+    end,
+
     transferRateInput = function(self)
         if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
             return _G.callPeripheralMethod(self.id, "getTransferRateInput", 0)

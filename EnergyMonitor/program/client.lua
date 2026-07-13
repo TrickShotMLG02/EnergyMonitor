@@ -10,6 +10,36 @@ local function printNoPeripheralWarning()
     print("Attach a configured capacitor or transfer device.")
 end
 
+local function getPeripheralDisplayName(wrapper)
+    local computerLabel = os.getComputerLabel()
+
+    if wrapper ~= nil and type(wrapper.displayName) == "function" then
+        local success, name = pcall(function()
+            return wrapper:displayName(computerLabel)
+        end)
+
+        if success and type(name) == "string" and name ~= "" then
+            return name
+        end
+    end
+
+    return computerLabel
+end
+
+local function printPeripheralData(wrapper, wrapperPrintMethod, fallbackPrintFunction)
+    if wrapper ~= nil and type(wrapper[wrapperPrintMethod]) == "function" then
+        local success = pcall(function()
+            wrapper[wrapperPrintMethod](wrapper)
+        end)
+
+        if success then
+            return
+        end
+    end
+
+    fallbackPrintFunction(wrapper)
+end
+
 while true do
     -- Receive ping from server
     local msg = _G.receiveMessage({
@@ -46,7 +76,7 @@ while true do
             peripheral = _G.MessageDataPeripheral.Transfer
             -- use peripheral data as transfer data structure
             setmetatable(peripheralData,{__index = _G.TransferData})
-            peripheralData.name = os.getComputerLabel()
+            peripheralData.name = getPeripheralDisplayName(_G.transferrer)
             peripheralData.id = tostring(_G.transferrer.id)
             peripheralData.transferIn = _G.transferrer:transferRateInput()
             peripheralData.transferOut = _G.transferrer:transferRateOutput()
@@ -55,20 +85,20 @@ while true do
             peripheralData.status = "N/A"
             
             -- print data structure to computer screen
-            _G.printEnergyTransferData(_G.transferrer)
+            printPeripheralData(_G.transferrer, "printEnergyTransferData", _G.printEnergyTransferData)
         elseif _G.capacitor ~= nil then
             -- Client is a capacitor
             peripheral = _G.MessageDataPeripheral.Capacitor
             -- use peripheral data as capacitor data structure
             setmetatable(peripheralData,{__index = _G.CapacitorData})
-            peripheralData.name = os.getComputerLabel()
+            peripheralData.name = getPeripheralDisplayName(_G.capacitor)
             peripheralData.id = tostring(_G.capacitor.id)
             peripheralData.energy = _G.capacitor:energy()
             peripheralData.maxEnergy = _G.capacitor:capacity()
             peripheralData.status = "N/A"
 
             -- print data structure to computer screen
-            _G.printEnergyStorageData(_G.capacitor)
+            printPeripheralData(_G.capacitor, "printEnergyStorageData", _G.printEnergyStorageData)
         end
 
         if peripheral ~= nil then

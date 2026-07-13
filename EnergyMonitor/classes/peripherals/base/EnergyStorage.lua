@@ -9,6 +9,10 @@ local EnergyStorage = {
     type = "",
     
     -- overwrite these functions in specific mod support implementations with the corresponding api function
+    displayName = function(self, computerLabel)
+        return computerLabel
+    end,
+
     energy = function(self)
         return _G.callPeripheralMethod(self.id, "getEnergyStored", 0)
     end,

@@ -15,6 +15,7 @@
       "classes/peripherals/draconicEvolution/DraconicCoreEnergyTransfer.lua",
       "classes/peripherals/draconicEvolution/DraconicFluxGateEnergyTransfer.lua",
       "classes/peripherals/energyMeter/EnergyMeter.lua",
+      "classes/peripherals/fluxNetworks/FluxNetworkTransfer.lua",
       "classes/peripherals/mekanism/MekanismEnergyStorage.lua",
       "classes/peripherals/mekanism/MekanismEnergyTransfer.lua",
       "classes/peripherals/powah/PowahEnergyStorage.lua",
