@@ -55,6 +55,8 @@ The monitor shows total energy, fill percentage, input rate, output rate, effect
 
 When an update is available, monitor computers show an update notice in the footer.
 
+![EnergyMonitor update notice in the monitor footer](docs/images/monitor_update_footer.png)
+
 If the monitor cannot receive server updates, it keeps the UI visible and shows a network notice:
 
 ![EnergyMonitor network error notice](docs/images/monitor_network_error.png)
@@ -186,6 +188,10 @@ EnergyMonitor checks for a newer tag in the same release channel on startup. Sta
 If `autoUpdate = 1`, an available update is installed automatically and the computer reboots. If `autoUpdate = 0`, EnergyMonitor shows an update prompt instead. Existing configuration and monitor graph data are preserved during updates.
 
 Monitor computers also show an update notice in the footer when an update is available.
+
+When a monitor computer restarts and finds an update during startup, it shows a centered update notice with the target version and installation hint:
+
+![EnergyMonitor centered update notice](docs/images/monitor_update_prompt.png)
 
 To reinstall or install a specific release, run the bootstrap again with an argument:
 
