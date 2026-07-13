@@ -114,6 +114,17 @@ _G.registerEnergyStorageSupport({
 })
 
 _G.registerEnergyStorageSupport({
+    label = "Powah Energy Storage device",
+    matches = function(ctx)
+        return ctx.type == "powah:energy_cell"
+            or ctx.type == "powah:ender_cell"
+    end,
+    create = function(ctx)
+        return newPowahEnergyStorage("ec0", ctx.peripheral, ctx.name, ctx.type)
+    end
+})
+
+_G.registerEnergyStorageSupport({
     label = "getEnergyStored() device",
     fallback = true,
     matches = function(ctx)

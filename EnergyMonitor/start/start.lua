@@ -650,6 +650,9 @@ function initClasses()
 	shell.run(periPath.."draconicEvolution/DraconicCoreEnergyStorage.lua")
 	shell.run(periPath.."draconicEvolution/DraconicCoreEnergyTransfer.lua")
 	shell.run(periPath.."draconicEvolution/DraconicFluxGateEnergyTransfer.lua")
+
+	-- Powah Mod Support
+	shell.run(periPath.."powah/PowahEnergyStorage.lua")
 end
 
 
