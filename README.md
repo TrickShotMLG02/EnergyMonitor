@@ -24,6 +24,8 @@ A server collects readings from client computers and broadcasts the combined dat
 - Checks for updates on startup and can install them automatically when enabled in `options.txt`.
 - The monitor's `Graph` button opens the stored-energy graph.
 
+---
+
 ## Installation
 
 Run this on each ComputerCraft computer that should be part of the EnergyMonitor network:
@@ -45,6 +47,8 @@ Install one computer as `server`, one or more computers as `client`, and one or 
 
 A monitor that is at least 4 blocks wide and 2 blocks high is recommended.
 
+---
+
 ## Monitor UI
 
 The monitor shows total energy, fill percentage, input rate, output rate, effective transfer rate, ETA, connected devices, filters, sorting, runtime, and version. The `Graph` button opens the stored-energy graph view, and the graph history size is configurable during monitor setup.
@@ -64,6 +68,8 @@ EnergyMonitor is designed for multi-computer setups:
 - A `monitor` displays the server data on an attached monitor.
 
 All computers in the same EnergyMonitor network need a wireless modem and the same modem channel.
+
+---
 
 ## Setup Steps
 
@@ -96,6 +102,8 @@ The installer asks for:
 - Optional startup installation
 
 Computer labels are shown in the monitor UI. Useful labels are names like `Reactor Input`, `Main Induction Matrix`, `Storage Core`, or `Base Output`.
+
+---
 
 ## Computer Roles
 
@@ -145,6 +153,8 @@ Supported peripheral types:
 
 Some peripherals can act as either storage or transfer devices. For example, Mekanism induction ports can be installed as storage clients or transfer clients. The client installer choice determines which wrapper EnergyMonitor uses.
 
+---
+
 ## Configuration
 
 Configuration is stored on each installed ComputerCraft computer at:
@@ -189,6 +199,8 @@ git v2.3-beta
 
 Without an argument, `git` installs the latest stable release.
 
+---
+
 ## Troubleshooting
 
 **No modem found**
@@ -230,6 +242,8 @@ Use a larger attached monitor. A monitor that is at least 4 blocks wide and 2 bl
 **The installer cannot download files**
 
 Make sure HTTP is enabled in the ComputerCraft config and that the computer can reach Pastebin and jsDelivr/GitHub-hosted files.
+
+---
 
 ## Repository Layout
 
@@ -288,6 +302,8 @@ Transfer handlers use the same shape, but usually pass `ctx.transferType` to the
 
 For a concrete implementation example, see [commit `f6869c5`](https://github.com/TrickShotMLG02/EnergyMonitor/commit/f6869c5).
 
+---
+
 ## Releases
 
 Versioning is tag-based:
@@ -300,6 +316,8 @@ Versioning is tag-based:
 - The `v2.0.0` tag is the compatibility installer anchor for older installs and updates.
 
 To publish a release, commit the code and create the matching tag. To publish a beta, tag the commit with the `-beta` suffix.
+
+---
 
 ## Contributing
 
