@@ -6,7 +6,7 @@ local DraconicFluxGateEnergyTransfer = setmetatable({
     -- Basic Methods
     transferRateInput = function(self)
         if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getFlow", 0)
+            return _G.callPeripheralMethod(self.id, "getFlow", nil)
         else
             return 0
         end
@@ -14,7 +14,7 @@ local DraconicFluxGateEnergyTransfer = setmetatable({
 
     transferRateOutput = function(self)
         if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getFlow", 0)
+            return _G.callPeripheralMethod(self.id, "getFlow", nil)
         else
             return 0
         end

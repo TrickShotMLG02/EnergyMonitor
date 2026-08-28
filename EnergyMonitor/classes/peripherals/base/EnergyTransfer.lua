@@ -14,9 +14,23 @@ local EnergyTransfer = {
         return computerLabel
     end,
 
+    -- Used by the client as a fallback when a transfer peripheral does not
+    -- expose a usable transfer-rate method.
+    energy = function(self)
+        local energy = _G.callPeripheralMethod(self.id, "getEnergyStored", nil)
+        if energy ~= nil then
+            return energy
+        end
+        energy = _G.callPeripheralMethod(self.id, "getEnergy", nil)
+        if energy ~= nil then
+            return energy
+        end
+        return _G.callPeripheralMethod(self.id, "getTotalEnergy", nil)
+    end,
+
     transferRateInput = function(self)
         if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getTransferRateInput", 0)
+            return _G.callPeripheralMethod(self.id, "getTransferRateInput", nil)
         else
             return 0
         end
@@ -24,7 +38,7 @@ local EnergyTransfer = {
 
     transferRateOutput = function(self)
         if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getTransferRateOutput", 0)
+            return _G.callPeripheralMethod(self.id, "getTransferRateOutput", nil)
         else
             return 0
         end
@@ -49,6 +63,6 @@ function _G.printEnergyTransferData(transfer)
     print("ID: "..tostring(transfer.id))
     -- print("Status: "..transfer:status())
     print("TransferType: " ..transfer.transferType)
-    print("Input: "..transfer:transferRateInput())
-    print("Output: "..transfer:transferRateOutput())
+    print("Input: "..tostring(transfer:transferRateInput()))
+    print("Output: "..tostring(transfer:transferRateOutput()))
 end

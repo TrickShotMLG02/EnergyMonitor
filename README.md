@@ -158,6 +158,8 @@ Supported peripheral types:
 
 Some peripherals can act as either storage or transfer devices. For example, Mekanism induction ports can be installed as storage clients or transfer clients. The client installer choice determines which wrapper EnergyMonitor uses.
 
+When a transfer peripheral does not provide a usable transfer-rate method but does provide its current energy level, EnergyMonitor estimates the rate from the change between two client updates. This fallback reports net input or output, so it cannot distinguish simultaneous charging and discharging through the same peripheral.
+
 Flux Networks support requires [FNCCT](https://github.com/TrickShotMLG02/FNCCT/tree/master). Build and install that mod in the modpack before using Flux Networks plugs, points, or controllers with EnergyMonitor.
 
 ---

@@ -6,10 +6,23 @@ local MekanismEnergyTransfer = setmetatable({
     successGetLastInput = false,
     successGetLastOutput = false,
 
+    energy = function(self)
+        if self.useGetEnergy then
+            local energy = _G.callPeripheralMethod(self.id, "getEnergy", nil)
+            return energy ~= nil and energy * 0.4 or nil
+        end
+        if self.useGetTotalEnergy then
+            local energy = _G.callPeripheralMethod(self.id, "getTotalEnergy", nil)
+            return energy ~= nil and energy * 0.4 or nil
+        end
+        return nil
+    end,
+
     -- Basic Methods
     transferRateInput = function(self)
         if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getLastInput", 0) * 0.4
+            local transfer = _G.callPeripheralMethod(self.id, "getLastInput", nil)
+            return transfer ~= nil and transfer * 0.4 or nil
         else
             return 0
         end
@@ -17,7 +30,8 @@ local MekanismEnergyTransfer = setmetatable({
 
     transferRateOutput = function(self)
         if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getLastOutput", 0) * 0.4
+            local transfer = _G.callPeripheralMethod(self.id, "getLastOutput", nil)
+            return transfer ~= nil and transfer * 0.4 or nil
         else
             return 0
         end
@@ -37,6 +51,9 @@ function _G.newMekanismEnergyTransfer(name, id, side, type, transferType)
 
     transfer.successGetLastInput = successGetLastInput    
     transfer.successGetLastOutput = successGetLastOutput
+
+    transfer.useGetEnergy = pcall(function() id.getEnergy() end)
+    transfer.useGetTotalEnergy = pcall(function() id.getTotalEnergy() end)
 
     transfer.name = name
     transfer.id = id

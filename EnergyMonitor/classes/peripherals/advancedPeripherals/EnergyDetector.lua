@@ -5,7 +5,7 @@
 local EnergyDetector = setmetatable({
     transferRateInput = function(self)
         if self.transferType == _G.TransferType.Input or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getTransferRate", 0)
+            return _G.callPeripheralMethod(self.id, "getTransferRate", nil)
         else
             return 0
         end
@@ -13,7 +13,7 @@ local EnergyDetector = setmetatable({
 
     transferRateOutput = function(self)
         if self.transferType == _G.TransferType.Output or self.transferType == _G.TransferType.Both then
-            return _G.callPeripheralMethod(self.id, "getTransferRate", 0)
+            return _G.callPeripheralMethod(self.id, "getTransferRate", nil)
         else
             return 0
         end
